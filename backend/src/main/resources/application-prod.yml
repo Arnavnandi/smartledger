@@ -7,9 +7,6 @@ spring:
     hikari:
       maximum-pool-size: 10
       minimum-idle: 2
-    hikari:
-      maximum-pool-size: 10
-      minimum-idle: 2
   jpa:
     hibernate:
       ddl-auto: update # Using update for simplicity in MVP, but 'validate' is safer long term.
