@@ -5,10 +5,18 @@ services:
     rootDir: backend
     plan: free
     envVars:
-      - key: SPRING_DATASOURCE_URL
+      - key: DB_HOST
         fromDatabase:
           name: smartledger-db
-          property: connectionString
+          property: host
+      - key: DB_PORT
+        fromDatabase:
+          name: smartledger-db
+          property: port
+      - key: DB_NAME
+        fromDatabase:
+          name: smartledger-db
+          property: database
       - key: SPRING_DATASOURCE_USERNAME
         fromDatabase:
           name: smartledger-db
