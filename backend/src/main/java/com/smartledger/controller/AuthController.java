@@ -1,5 +1,4 @@
 package com.smartledger.controller;
-
 import com.smartledger.model.RefreshToken;
 import com.smartledger.model.dto.*;
 import com.smartledger.security.CustomUserDetails;
@@ -13,11 +12,9 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
-
 @RestController
 @RequestMapping("/api/auth")
 public class AuthController {
-
     private final AuthenticationManager authenticationManager;
     private final JwtTokenProvider tokenProvider;
     private final AuthService authService;

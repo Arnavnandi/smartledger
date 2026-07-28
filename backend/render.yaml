@@ -31,6 +31,10 @@ services:
         sync: false
       - key: JWT_SECRET
         generateValue: true
+      - key: MAIL_HOST
+        sync: false
+      - key: MAIL_PORT
+        sync: false
       - key: MAIL_USERNAME
         sync: false
       - key: MAIL_PASSWORD
