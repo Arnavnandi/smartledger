@@ -17,12 +17,23 @@ import java.util.Base64;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 public class EmailService {
 
     private static final Logger logger = LoggerFactory.getLogger(EmailService.class);
+    private static final String BREVO_API_URL = "https://api.brevo.com/v3/smtp/email";
     private static final String RESEND_API_URL = "https://api.resend.com/emails";
+
+    @Value("${brevo.api-key:}")
+    private String brevoApiKey;
+
+    @Value("${brevo.sender-email:}")
+    private String brevoSenderEmail;
+
+    @Value("${brevo.sender-name:SmartLedger}")
+    private String brevoSenderName;
 
     @Value("${resend.api-key:}")
     private String resendApiKey;
@@ -50,7 +61,7 @@ public class EmailService {
                 "<p><a href=\"" + frontendUrl + "/verify-email?token=" + token + "\">Verify Email</a></p>" +
                 "<br/><p>If you did not request this, please ignore this email.</p>";
 
-        sendEmailViaResend(to, subject, html, null);
+        dispatchEmail(to, subject, html, null);
     }
 
     public void sendPasswordResetEmail(String to, String token) {
@@ -59,7 +70,7 @@ public class EmailService {
                 "<p>To reset your password, click the link below:</p>" +
                 "<p><a href=\"" + frontendUrl + "/reset-password?token=" + token + "\">Reset Password</a></p>";
 
-        sendEmailViaResend(to, subject, html, null);
+        dispatchEmail(to, subject, html, null);
     }
 
     @Async
@@ -83,7 +94,7 @@ public class EmailService {
         }
 
         try {
-            sendEmailViaResend(to, subject, htmlText, attachments);
+            dispatchEmail(to, subject, htmlText, attachments);
         } catch (Exception ex) {
             logger.error("Failed to send invoice email asynchronously to {}", to, ex);
         }
@@ -101,7 +112,7 @@ public class EmailService {
                 "<br/><p>Best regards,<br/>" + invoice.getCompany().getName() + "</p>";
 
         try {
-            sendEmailViaResend(to, subject, htmlText, null);
+            dispatchEmail(to, subject, htmlText, null);
         } catch (Exception ex) {
             logger.error("Failed to send due reminder email asynchronously to {}", to, ex);
         }
@@ -119,7 +130,7 @@ public class EmailService {
                 "<br/><p>Best regards,<br/>" + invoice.getCompany().getName() + "</p>";
 
         try {
-            sendEmailViaResend(to, subject, htmlText, null);
+            dispatchEmail(to, subject, htmlText, null);
         } catch (Exception ex) {
             logger.error("Failed to send payment reminder email asynchronously to {}", to, ex);
         }
@@ -136,18 +147,70 @@ public class EmailService {
                 "<br/><p>Best regards,<br/>" + invoice.getCompany().getName() + "</p>";
 
         try {
-            sendEmailViaResend(to, subject, htmlText, null);
+            dispatchEmail(to, subject, htmlText, null);
         } catch (Exception ex) {
             logger.error("Failed to send payment success email asynchronously to {}", to, ex);
         }
     }
 
-    private void sendEmailViaResend(String to, String subject, String htmlContent, List<Map<String, Object>> attachments) {
-        if (resendApiKey == null || resendApiKey.trim().isEmpty()) {
-            logger.error("RESEND_API_KEY environment variable is missing or blank.");
-            throw new EmailDeliveryException("Failed to send email: RESEND_API_KEY is not configured.");
+    private void dispatchEmail(String to, String subject, String htmlContent, List<Map<String, Object>> attachments) {
+        if (brevoApiKey != null && !brevoApiKey.trim().isEmpty()) {
+            sendEmailViaBrevo(to, subject, htmlContent, attachments);
+        } else if (resendApiKey != null && !resendApiKey.trim().isEmpty()) {
+            sendEmailViaResend(to, subject, htmlContent, attachments);
+        } else {
+            logger.error("Neither BREVO_API_KEY nor RESEND_API_KEY is configured.");
+            throw new EmailDeliveryException("Failed to send email: No API key provided (set BREVO_API_KEY or RESEND_API_KEY).");
         }
+    }
 
+    private void sendEmailViaBrevo(String to, String subject, String htmlContent, List<Map<String, Object>> attachments) {
+        try {
+            Map<String, Object> bodyMap = new HashMap<>();
+            String name = (brevoSenderName != null && !brevoSenderName.isBlank()) ? brevoSenderName : "SmartLedger";
+            String email = (brevoSenderEmail != null && !brevoSenderEmail.isBlank()) ? brevoSenderEmail : "no-reply@smartledger.app";
+
+            bodyMap.put("sender", Map.of("name", name, "email", email));
+            bodyMap.put("to", List.of(Map.of("email", to)));
+            bodyMap.put("subject", subject);
+            bodyMap.put("htmlContent", htmlContent);
+
+            if (attachments != null && !attachments.isEmpty()) {
+                List<Map<String, String>> brevoAttachments = attachments.stream().map(att -> Map.of(
+                        "name", att.get("filename").toString(),
+                        "content", att.get("content").toString()
+                )).collect(Collectors.toList());
+                bodyMap.put("attachment", brevoAttachments);
+            }
+
+            String jsonPayload = objectMapper.writeValueAsString(bodyMap);
+
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create(BREVO_API_URL))
+                    .header("api-key", brevoApiKey.trim())
+                    .header("accept", "application/json")
+                    .header("content-type", "application/json")
+                    .timeout(Duration.ofSeconds(15))
+                    .POST(HttpRequest.BodyPublishers.ofString(jsonPayload))
+                    .build();
+
+            HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+
+            if (response.statusCode() >= 200 && response.statusCode() < 300) {
+                logger.info("Successfully delivered email to {} via Brevo API (Status: {})", to, response.statusCode());
+            } else {
+                logger.error("Brevo API rejected email to {}. Status: {}, Response: {}", to, response.statusCode(), response.body());
+                throw new EmailDeliveryException("Failed to send email to " + to + " via Brevo (Status: " + response.statusCode() + "). " + response.body());
+            }
+        } catch (EmailDeliveryException ede) {
+            throw ede;
+        } catch (Exception ex) {
+            logger.error("Network or serialization error while sending email to {} via Brevo", to, ex);
+            throw new EmailDeliveryException("Failed to send email via Brevo due to connection failure: " + ex.getMessage(), ex);
+        }
+    }
+
+    private void sendEmailViaResend(String to, String subject, String htmlContent, List<Map<String, Object>> attachments) {
         try {
             Map<String, Object> bodyMap = new HashMap<>();
             bodyMap.put("from", fromEmail != null && !fromEmail.isBlank() ? fromEmail : "SmartLedger <onboarding@resend.dev>");
