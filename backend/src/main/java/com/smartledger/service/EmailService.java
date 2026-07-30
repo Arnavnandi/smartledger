@@ -154,14 +154,11 @@ public class EmailService {
     }
 
     private void dispatchEmail(String to, String subject, String htmlContent, List<Map<String, Object>> attachments) {
-        if (brevoApiKey != null && !brevoApiKey.trim().isEmpty()) {
-            sendEmailViaBrevo(to, subject, htmlContent, attachments);
-        } else if (resendApiKey != null && !resendApiKey.trim().isEmpty()) {
-            sendEmailViaResend(to, subject, htmlContent, attachments);
-        } else {
-            logger.error("Neither BREVO_API_KEY nor RESEND_API_KEY is configured.");
-            throw new EmailDeliveryException("Failed to send email: No API key provided (set BREVO_API_KEY or RESEND_API_KEY).");
+        if (brevoApiKey == null || brevoApiKey.trim().isEmpty()) {
+            logger.error("BREVO_API_KEY environment variable is missing or blank.");
+            throw new EmailDeliveryException("Failed to send email: BREVO_API_KEY is not configured.");
         }
+        sendEmailViaBrevo(to, subject, htmlContent, attachments);
     }
 
     private void sendEmailViaBrevo(String to, String subject, String htmlContent, List<Map<String, Object>> attachments) {
@@ -207,43 +204,6 @@ public class EmailService {
         } catch (Exception ex) {
             logger.error("Network or serialization error while sending email to {} via Brevo", to, ex);
             throw new EmailDeliveryException("Failed to send email via Brevo due to connection failure: " + ex.getMessage(), ex);
-        }
-    }
-
-    private void sendEmailViaResend(String to, String subject, String htmlContent, List<Map<String, Object>> attachments) {
-        try {
-            Map<String, Object> bodyMap = new HashMap<>();
-            bodyMap.put("from", fromEmail != null && !fromEmail.isBlank() ? fromEmail : "SmartLedger <onboarding@resend.dev>");
-            bodyMap.put("to", List.of(to));
-            bodyMap.put("subject", subject);
-            bodyMap.put("html", htmlContent);
-            if (attachments != null && !attachments.isEmpty()) {
-                bodyMap.put("attachments", attachments);
-            }
-
-            String jsonPayload = objectMapper.writeValueAsString(bodyMap);
-
-            HttpRequest request = HttpRequest.newBuilder()
-                    .uri(URI.create(RESEND_API_URL))
-                    .header("Authorization", "Bearer " + resendApiKey.trim())
-                    .header("Content-Type", "application/json")
-                    .timeout(Duration.ofSeconds(15))
-                    .POST(HttpRequest.BodyPublishers.ofString(jsonPayload))
-                    .build();
-
-            HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
-
-            if (response.statusCode() >= 200 && response.statusCode() < 300) {
-                logger.info("Successfully delivered email to {} via Resend API (Status: {})", to, response.statusCode());
-            } else {
-                logger.error("Resend API rejected email to {}. Status: {}, Response: {}", to, response.statusCode(), response.body());
-                throw new EmailDeliveryException("Failed to send email to " + to + " via Resend (Status: " + response.statusCode() + "). " + response.body());
-            }
-        } catch (EmailDeliveryException ede) {
-            throw ede;
-        } catch (Exception ex) {
-            logger.error("Network or serialization error while sending email to {}", to, ex);
-            throw new EmailDeliveryException("Failed to send email due to connection failure: " + ex.getMessage(), ex);
         }
     }
 }

@@ -21,9 +21,7 @@ brevo:
   sender-email: ${BREVO_SENDER_EMAIL:}
   sender-name: ${BREVO_SENDER_NAME:SmartLedger}
 
-resend:
-  api-key: ${RESEND_API_KEY:}
-  from-email: ${RESEND_FROM_EMAIL:SmartLedger <onboarding@resend.dev>}
+
 
 server:
   port: 8080

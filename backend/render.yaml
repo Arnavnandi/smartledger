@@ -37,10 +37,7 @@ services:
         sync: false
       - key: BREVO_SENDER_NAME
         sync: false
-      - key: RESEND_API_KEY
-        sync: false
-      - key: RESEND_FROM_EMAIL
-        sync: false
+
       - key: GEMINI_API_KEY
         sync: false
       - key: CLOUDINARY_URL
