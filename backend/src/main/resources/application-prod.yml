@@ -16,10 +16,26 @@ spring:
         format_sql: false
         dialect: org.hibernate.dialect.PostgreSQLDialect
 
+brevo:
+  api-key: ${BREVO_API_KEY:}
+  sender-email: ${BREVO_SENDER_EMAIL:}
+  sender-name: ${BREVO_SENDER_NAME:SmartLedger}
+
+jwt:
+  secret: ${JWT_SECRET:supersecretkeythatisatleast256bitslong1234567890supersecretkeythatisatleast256bitslong1234567890}
+  expiration: 86400000
+
+gemini:
+  api-key: ${GEMINI_API_KEY:}
+  model: ${GEMINI_MODEL:gemini-2.5-flash}
+
+app:
+  frontend-url: ${FRONTEND_URL:http://localhost:5173}
+
 server:
   port: ${PORT:8080}
   error:
-    include-message: never
+    include-message: always
 
 logging:
   level:
