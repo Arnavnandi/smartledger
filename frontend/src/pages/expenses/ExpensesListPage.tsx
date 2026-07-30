@@ -152,7 +152,7 @@ export const ExpensesListPage = () => {
                   <TableCell>
                     <div className="flex justify-end gap-2">
                       {expense.receiptUrl && (
-                        <a href={expense.receiptUrl.startsWith('http') ? expense.receiptUrl : `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080'}${expense.receiptUrl}`} target="_blank" rel="noreferrer">
+                        <a href={expense.receiptUrl.startsWith('http') ? expense.receiptUrl : `${import.meta.env.VITE_API_URL || import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080'}${expense.receiptUrl}`} target="_blank" rel="noreferrer">
                           <Button variant="ghost" size="icon" title="View Receipt">
                             <FileText className="h-4 w-4" />
                           </Button>
