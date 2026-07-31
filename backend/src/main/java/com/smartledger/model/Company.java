@@ -32,6 +32,9 @@ public class Company {
     private String invoicePrefix = "INV-"; // Default
 
     @Column
+    private String upiId;
+
+    @Column
     private Integer lastInvoiceSequence = 0;
 
     @OneToOne(fetch = FetchType.LAZY)
@@ -63,6 +66,9 @@ public class Company {
     
     public String getInvoicePrefix() { return invoicePrefix; }
     public void setInvoicePrefix(String invoicePrefix) { this.invoicePrefix = invoicePrefix; }
+
+    public String getUpiId() { return upiId; }
+    public void setUpiId(String upiId) { this.upiId = upiId; }
 
     public Integer getLastInvoiceSequence() { return lastInvoiceSequence; }
     public void setLastInvoiceSequence(Integer lastInvoiceSequence) { this.lastInvoiceSequence = lastInvoiceSequence; }

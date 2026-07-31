@@ -38,15 +38,20 @@ public class PdfService {
             Font bodyBoldFont = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 10);
 
             // Add Logo if exists
-            if (invoice.getCompany().getLogoUrl() != null && !invoice.getCompany().getLogoUrl().isEmpty()) {
+            if (invoice.getCompany().getLogoUrl() != null && !invoice.getCompany().getLogoUrl().trim().isEmpty()) {
                 try {
-                    // Extract local path from URL
-                    String logoUrl = invoice.getCompany().getLogoUrl();
-                    String fileName = logoUrl.substring(logoUrl.lastIndexOf("/") + 1);
-                    File logoFile = Paths.get("./uploads", fileName).toFile();
-                    
-                    if (logoFile.exists()) {
-                        Image logo = Image.getInstance(logoFile.getAbsolutePath());
+                    String logoUrl = invoice.getCompany().getLogoUrl().trim();
+                    Image logo = null;
+                    if (logoUrl.startsWith("http://") || logoUrl.startsWith("https://")) {
+                        logo = Image.getInstance(new java.net.URI(logoUrl).toURL());
+                    } else {
+                        String fileName = logoUrl.substring(logoUrl.lastIndexOf("/") + 1);
+                        File logoFile = Paths.get("./uploads", fileName).toFile();
+                        if (logoFile.exists()) {
+                            logo = Image.getInstance(logoFile.getAbsolutePath());
+                        }
+                    }
+                    if (logo != null) {
                         logo.scaleToFit(120, 80);
                         logo.setAlignment(Element.ALIGN_LEFT);
                         document.add(logo);
@@ -167,21 +172,41 @@ public class PdfService {
                 document.add(new Paragraph(invoice.getTerms(), bodyFont));
             }
 
-            // QR Code
+            // QR Code for Transactions / Payment
             try {
-                String qrData = String.format("Invoice: %s | Total: %s%.2f | Due: %s", 
-                        invoice.getInvoiceNumber(), currency, invoice.getTotalAmount(), invoice.getDueDate());
+                String upiId = invoice.getCompany().getUpiId();
+                String qrData;
+                String qrCaption;
+                
+                if (upiId != null && !upiId.trim().isEmpty()) {
+                    // Generate dynamic UPI payment URI for GPay / PhonePe / Paytm / BHIM
+                    qrData = String.format("upi://pay?pa=%s&pn=%s&am=%.2f&cu=%s&tn=Invoice_%s",
+                            upiId.trim(),
+                            java.net.URLEncoder.encode(invoice.getCompany().getName(), java.nio.charset.StandardCharsets.UTF_8),
+                            currencyService.convertToDisplay(invoice.getTotalAmount(), currency),
+                            currency.equals("₹") ? "INR" : currency,
+                            invoice.getInvoiceNumber());
+                    qrCaption = "Scan QR Code to Pay via GPay / PhonePe / Paytm / UPI (" + upiId.trim() + ")";
+                } else {
+                    qrData = String.format("Invoice: %s | Company: %s | Amount: %s%.2f | Due: %s", 
+                            invoice.getInvoiceNumber(), invoice.getCompany().getName(), currency, currencyService.convertToDisplay(invoice.getTotalAmount(), currency), invoice.getDueDate());
+                    qrCaption = "Scan for Digital Invoice Verification";
+                }
                 
                 QRCodeWriter qrCodeWriter = new QRCodeWriter();
-                BitMatrix bitMatrix = qrCodeWriter.encode(qrData, BarcodeFormat.QR_CODE, 100, 100);
+                BitMatrix bitMatrix = qrCodeWriter.encode(qrData, BarcodeFormat.QR_CODE, 120, 120);
                 
                 ByteArrayOutputStream qrOut = new ByteArrayOutputStream();
                 MatrixToImageWriter.writeToStream(bitMatrix, "PNG", qrOut);
                 
                 Image qrImage = Image.getInstance(qrOut.toByteArray());
                 qrImage.setAlignment(Element.ALIGN_CENTER);
-                qrImage.setSpacingBefore(30);
+                qrImage.setSpacingBefore(15);
                 document.add(qrImage);
+
+                Paragraph caption = new Paragraph(qrCaption, bodyFont);
+                caption.setAlignment(Element.ALIGN_CENTER);
+                document.add(caption);
                 
             } catch (Exception e) {
                 System.err.println("Could not generate QR Code: " + e.getMessage());
