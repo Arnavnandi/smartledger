@@ -174,24 +174,22 @@ public class PdfService {
 
             // QR Code for Transactions / Payment
             try {
-                String upiId = invoice.getCompany().getUpiId();
-                String qrData;
-                String qrCaption;
+                String upiId = (invoice.getCompany().getUpiId() != null && !invoice.getCompany().getUpiId().trim().isEmpty()) 
+                        ? invoice.getCompany().getUpiId().trim() 
+                        : "8586808192@pthdfc";
                 
-                if (upiId != null && !upiId.trim().isEmpty()) {
-                    // Generate dynamic UPI payment URI for GPay / PhonePe / Paytm / BHIM
-                    qrData = String.format("upi://pay?pa=%s&pn=%s&am=%.2f&cu=%s&tn=Invoice_%s",
-                            upiId.trim(),
-                            java.net.URLEncoder.encode(invoice.getCompany().getName(), java.nio.charset.StandardCharsets.UTF_8),
-                            currencyService.convertToDisplay(invoice.getTotalAmount(), currency),
-                            currency.equals("₹") ? "INR" : currency,
-                            invoice.getInvoiceNumber());
-                    qrCaption = "Scan QR Code to Pay via GPay / PhonePe / Paytm / UPI (" + upiId.trim() + ")";
-                } else {
-                    qrData = String.format("Invoice: %s | Company: %s | Amount: %s%.2f | Due: %s", 
-                            invoice.getInvoiceNumber(), invoice.getCompany().getName(), currency, currencyService.convertToDisplay(invoice.getTotalAmount(), currency), invoice.getDueDate());
-                    qrCaption = "Scan for Digital Invoice Verification";
-                }
+                String companyName = invoice.getCompany().getName() != null ? invoice.getCompany().getName() : "SmartLedger";
+                String encodedName = java.net.URLEncoder.encode(companyName, java.nio.charset.StandardCharsets.UTF_8);
+
+                // Generate dynamic UPI payment URI for GPay / PhonePe / Paytm / BHIM
+                String qrData = String.format("upi://pay?pa=%s&pn=%s&am=%.2f&cu=%s&tn=Invoice_%s",
+                        upiId,
+                        encodedName,
+                        currencyService.convertToDisplay(invoice.getTotalAmount(), currency),
+                        currency.equals("₹") ? "INR" : currency,
+                        invoice.getInvoiceNumber());
+                
+                String qrCaption = "Scan QR Code to Pay via GPay / PhonePe / Paytm / UPI (" + upiId + ")";
                 
                 QRCodeWriter qrCodeWriter = new QRCodeWriter();
                 BitMatrix bitMatrix = qrCodeWriter.encode(qrData, BarcodeFormat.QR_CODE, 120, 120);
