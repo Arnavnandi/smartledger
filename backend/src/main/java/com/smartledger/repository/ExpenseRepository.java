@@ -21,7 +21,8 @@ public interface ExpenseRepository extends JpaRepository<Expense, Long>, JpaSpec
     @org.springframework.data.jpa.repository.EntityGraph(attributePaths = {"category"})
     Page<Expense> findByCompany(Company company, Pageable pageable);
 
-    List<Expense> findAllByCompany(Company company);
+    @Query("SELECT e FROM Expense e WHERE e.company = :company")
+    List<Expense> findAllByCompany(@Param("company") Company company);
 
     @org.springframework.data.jpa.repository.EntityGraph(attributePaths = {"category"})
     @Query("SELECT e FROM Expense e LEFT JOIN e.category c WHERE e.company = :company AND " +

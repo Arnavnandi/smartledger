@@ -166,8 +166,7 @@ public class ReportService {
     }
 
     private List<Expense> getExpensesInRange(Company company, LocalDate start, LocalDate end) {
-        return expenseRepository.findAll().stream()
-                .filter(e -> e.getCompany() != null && e.getCompany().getId().equals(company.getId()))
+        return expenseRepository.findAllByCompany(company).stream()
                 .filter(e -> {
                     LocalDate d = e.getExpenseDate() != null ? e.getExpenseDate() : (e.getCreatedAt() != null ? e.getCreatedAt().toLocalDate() : null);
                     if (d == null) return false;
