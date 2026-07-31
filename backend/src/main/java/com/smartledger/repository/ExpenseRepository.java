@@ -46,6 +46,6 @@ public interface ExpenseRepository extends JpaRepository<Expense, Long>, JpaSpec
     @Query("SELECT SUM(e.amount) FROM Expense e WHERE e.company = :company")
     BigDecimal sumTotalExpenses(@Param("company") Company company);
 
-    @Query("SELECT e FROM Expense e WHERE e.company = :company AND e.expenseDate >= :startDate")
+    @Query("SELECT e FROM Expense e WHERE e.company = :company AND (e.expenseDate >= :startDate OR e.expenseDate IS NULL)")
     List<Expense> findExpensesSince(@Param("company") Company company, @Param("startDate") LocalDate startDate);
 }

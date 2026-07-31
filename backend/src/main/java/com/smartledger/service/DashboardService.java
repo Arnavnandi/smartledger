@@ -68,41 +68,57 @@ public class DashboardService {
         List<Invoice> recentInvoices = invoiceRepository.findPaidInvoicesSince(company, startDate);
         List<Expense> recentExpenses = expenseRepository.findExpensesSince(company, startDate);
 
-        // Group by YYYY-MM
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MMM yyyy");
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MMM yyyy", Locale.ENGLISH);
+        Map<String, double[]> monthlyTotals = new LinkedHashMap<>();
         
-        Map<String, ChartDataPoint> dataMap = new LinkedHashMap<>();
-        
-        // Initialize all months
+        // Initialize 6 months in chronological order
         for (int i = months - 1; i >= 0; i--) {
-            LocalDate d = LocalDate.now().minusMonths(i);
-            String label = d.format(formatter);
-            dataMap.put(label, new ChartDataPoint(label, 0.0, 0.0));
+            java.time.YearMonth ym = java.time.YearMonth.now().minusMonths(i);
+            String label = ym.format(formatter);
+            monthlyTotals.put(label, new double[]{0.0, 0.0});
         }
 
-        // Aggregate Revenue
-        for (Invoice inv : recentInvoices) {
-            String label = inv.getIssueDate().format(formatter);
-            if (dataMap.containsKey(label)) {
-                ChartDataPoint pt = dataMap.get(label);
-                dataMap.put(label, new ChartDataPoint(label, pt.getRevenue() + inv.getTotalAmount(), pt.getExpense()));
+        // Aggregate Revenue from paid invoices
+        if (recentInvoices != null) {
+            for (Invoice inv : recentInvoices) {
+                LocalDate date = inv.getIssueDate();
+                if (date != null) {
+                    String label = date.format(formatter);
+                    if (monthlyTotals.containsKey(label)) {
+                        double total = inv.getTotalAmount() != null ? inv.getTotalAmount() : 0.0;
+                        monthlyTotals.get(label)[0] += total;
+                    }
+                }
             }
         }
 
         // Aggregate Expenses
-        for (Expense exp : recentExpenses) {
-            String label = exp.getExpenseDate().format(formatter);
-            if (dataMap.containsKey(label)) {
-                ChartDataPoint pt = dataMap.get(label);
-                dataMap.put(label, new ChartDataPoint(label, pt.getRevenue(), pt.getExpense() + exp.getAmount().doubleValue()));
+        if (recentExpenses != null) {
+            for (Expense exp : recentExpenses) {
+                LocalDate date = exp.getExpenseDate() != null 
+                        ? exp.getExpenseDate() 
+                        : (exp.getCreatedAt() != null ? exp.getCreatedAt().toLocalDate() : LocalDate.now());
+                String label = date.format(formatter);
+                if (monthlyTotals.containsKey(label)) {
+                    double amt = exp.getAmount() != null ? exp.getAmount().doubleValue() : 0.0;
+                    monthlyTotals.get(label)[1] += amt;
+                }
             }
         }
 
-        return dataMap.values().stream().map(pt -> new ChartDataPoint(
-            pt.getMonth(), 
-            currencyService.convertToDisplay(pt.getRevenue(), company.getCurrency()), 
-            currencyService.convertToDisplay(pt.getExpense(), company.getCurrency())
-        )).collect(Collectors.toList());
+        List<ChartDataPoint> result = new ArrayList<>();
+        for (Map.Entry<String, double[]> entry : monthlyTotals.entrySet()) {
+            String month = entry.getKey();
+            Double revInr = entry.getValue()[0];
+            Double expInr = entry.getValue()[1];
+            
+            Double revDisplay = currencyService.convertToDisplay(revInr, company.getCurrency());
+            Double expDisplay = currencyService.convertToDisplay(expInr, company.getCurrency());
+            
+            result.add(new ChartDataPoint(month, revDisplay, expDisplay));
+        }
+
+        return result;
     }
 
     @Transactional(readOnly = true)
