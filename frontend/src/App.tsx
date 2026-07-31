@@ -26,6 +26,8 @@ import { AdminUsersPage } from './pages/admin/AdminUsersPage';
 import { AdminBusinessesPage } from './pages/admin/AdminBusinessesPage';
 import { AdminLogsPage } from './pages/admin/AdminLogsPage';
 
+import { PublicPaymentPage } from './pages/payment/PublicPaymentPage';
+
 const AppRoutes = () => {
   return (
     <Routes>
@@ -35,6 +37,7 @@ const AppRoutes = () => {
       <Route path="/forgot-password" element={<ForgotPasswordPage />} />
       <Route path="/reset-password" element={<ResetPasswordPage />} />
       <Route path="/verify-email" element={<VerifyEmailPage />} />
+      <Route path="/pay" element={<PublicPaymentPage />} />
 
       {/* Protected Routes */}
       <Route element={<ProtectedRoute />}>

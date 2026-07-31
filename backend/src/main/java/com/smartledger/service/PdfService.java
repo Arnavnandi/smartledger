@@ -19,6 +19,9 @@ public class PdfService {
 
     private final CurrencyService currencyService;
 
+    @org.springframework.beans.factory.annotation.Value("${FRONTEND_URL:${app.frontend-url:https://smartledger-five.vercel.app}}")
+    private String frontendUrl;
+
     public PdfService(CurrencyService currencyService) {
         this.currencyService = currencyService;
     }
@@ -172,27 +175,28 @@ public class PdfService {
                 document.add(new Paragraph(invoice.getTerms(), bodyFont));
             }
 
-            // QR Code for Transactions / Payment
+            // QR Code for Transactions / Payment Portal Redirect
             try {
                 String upiId = (invoice.getCompany().getUpiId() != null && !invoice.getCompany().getUpiId().trim().isEmpty()) 
                         ? invoice.getCompany().getUpiId().trim() 
                         : "8586808192@pthdfc";
                 
                 String companyName = invoice.getCompany().getName() != null ? invoice.getCompany().getName() : "SmartLedger";
-                String encodedName = java.net.URLEncoder.encode(companyName, java.nio.charset.StandardCharsets.UTF_8);
+                double displayAmount = currencyService.convertToDisplay(invoice.getTotalAmount(), currency);
 
-                // Generate dynamic UPI payment URI for GPay / PhonePe / Paytm / BHIM
-                String qrData = String.format("upi://pay?pa=%s&pn=%s&am=%.2f&cu=%s&tn=Invoice_%s",
-                        upiId,
-                        encodedName,
-                        currencyService.convertToDisplay(invoice.getTotalAmount(), currency),
-                        currency.equals("₹") ? "INR" : currency,
-                        invoice.getInvoiceNumber());
-                
-                String qrCaption = "Scan QR Code to Pay via GPay / PhonePe / Paytm / UPI (" + upiId + ")";
-                
+                String baseUrl = (frontendUrl != null && !frontendUrl.isBlank()) ? frontendUrl.replaceAll("/+$", "") : "https://smartledger-five.vercel.app";
+
+                // Public Web Payment Portal URL (scanned by phone camera -> redirects to payment page)
+                String paymentPageUrl = String.format("%s/pay?invoice=%s&amount=%.2f&company=%s&upi=%s&currency=%s",
+                        baseUrl,
+                        invoice.getInvoiceNumber(),
+                        displayAmount,
+                        java.net.URLEncoder.encode(companyName, java.nio.charset.StandardCharsets.UTF_8),
+                        java.net.URLEncoder.encode(upiId, java.nio.charset.StandardCharsets.UTF_8),
+                        java.net.URLEncoder.encode(currency, java.nio.charset.StandardCharsets.UTF_8));
+
                 QRCodeWriter qrCodeWriter = new QRCodeWriter();
-                BitMatrix bitMatrix = qrCodeWriter.encode(qrData, BarcodeFormat.QR_CODE, 120, 120);
+                BitMatrix bitMatrix = qrCodeWriter.encode(paymentPageUrl, BarcodeFormat.QR_CODE, 120, 120);
                 
                 ByteArrayOutputStream qrOut = new ByteArrayOutputStream();
                 MatrixToImageWriter.writeToStream(bitMatrix, "PNG", qrOut);
@@ -202,7 +206,7 @@ public class PdfService {
                 qrImage.setSpacingBefore(15);
                 document.add(qrImage);
 
-                Paragraph caption = new Paragraph(qrCaption, bodyFont);
+                Paragraph caption = new Paragraph("Scan QR Code to Open Payment Portal (" + upiId + ")", bodyFont);
                 caption.setAlignment(Element.ALIGN_CENTER);
                 document.add(caption);
                 
