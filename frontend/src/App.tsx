@@ -1,6 +1,7 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import { CompanyProvider } from './context/CompanyContext';
+import { ThemeProvider } from './context/ThemeContext';
 import { ProtectedRoute } from './components/shared/ProtectedRoute';
 import { DashboardLayout } from './layouts/DashboardLayout';
 import { DashboardPage } from './pages/dashboard/DashboardPage';
@@ -77,13 +78,15 @@ const AppRoutes = () => {
 
 function App() {
   return (
-    <AuthProvider>
-      <CompanyProvider>
-        <Router>
-          <AppRoutes />
-        </Router>
-      </CompanyProvider>
-    </AuthProvider>
+    <ThemeProvider>
+      <AuthProvider>
+        <CompanyProvider>
+          <Router>
+            <AppRoutes />
+          </Router>
+        </CompanyProvider>
+      </AuthProvider>
+    </ThemeProvider>
   );
 }
 

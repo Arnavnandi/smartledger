@@ -20,6 +20,7 @@ import {
 } from 'lucide-react';
 import { notificationService } from '../services/notification.service';
 import type { AppNotification } from '../types/notification.types';
+import { ThemeToggle } from '../components/shared/ThemeToggle';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -233,6 +234,7 @@ export const DashboardLayout = () => {
               </Button>
             </Link>
 
+            <ThemeToggle />
             <NotificationBell />
           </div>
         </header>

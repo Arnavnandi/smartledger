@@ -3,6 +3,8 @@ import { useAuth } from '../context/AuthContext';
 import { ShieldAlert, Users, Building2, ScrollText, LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
+import { ThemeToggle } from '../components/shared/ThemeToggle';
+
 export const AdminLayout = () => {
   const { user, logout } = useAuth();
   const location = useLocation();
@@ -73,6 +75,7 @@ export const AdminLayout = () => {
         <header className="h-16 bg-white dark:bg-slate-900 border-b flex items-center justify-between px-8">
           <h1 className="text-xl font-semibold">Super Admin Console</h1>
           <div className="flex items-center space-x-4">
+            <ThemeToggle />
             <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center text-white font-bold">
               {user?.firstName?.charAt(0)}{user?.lastName?.charAt(0)}
             </div>
