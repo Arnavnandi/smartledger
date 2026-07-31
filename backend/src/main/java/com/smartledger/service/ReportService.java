@@ -155,17 +155,24 @@ public class ReportService {
     }
 
     private List<Invoice> getPaidInvoicesInRange(Company company, LocalDate start, LocalDate end) {
-        // Simple fetch all and filter in memory for prototype; ideally use JPA Spec
         return invoiceRepository.findAll().stream()
-                .filter(i -> i.getCompany().getId().equals(company.getId()) && i.getStatus() == com.smartledger.model.InvoiceStatus.PAID)
-                .filter(i -> !i.getIssueDate().isBefore(start) && !i.getIssueDate().isAfter(end))
+                .filter(i -> i.getCompany() != null && i.getCompany().getId().equals(company.getId()) && i.getStatus() == com.smartledger.model.InvoiceStatus.PAID)
+                .filter(i -> {
+                    LocalDate d = i.getIssueDate() != null ? i.getIssueDate() : (i.getCreatedAt() != null ? i.getCreatedAt().toLocalDate() : null);
+                    if (d == null) return false;
+                    return !d.isBefore(start) && !d.isAfter(end);
+                })
                 .collect(Collectors.toList());
     }
 
     private List<Expense> getExpensesInRange(Company company, LocalDate start, LocalDate end) {
         return expenseRepository.findAll().stream()
-                .filter(e -> e.getCompany().getId().equals(company.getId()))
-                .filter(e -> !e.getExpenseDate().isBefore(start) && !e.getExpenseDate().isAfter(end))
+                .filter(e -> e.getCompany() != null && e.getCompany().getId().equals(company.getId()))
+                .filter(e -> {
+                    LocalDate d = e.getExpenseDate() != null ? e.getExpenseDate() : (e.getCreatedAt() != null ? e.getCreatedAt().toLocalDate() : null);
+                    if (d == null) return false;
+                    return !d.isBefore(start) && !d.isAfter(end);
+                })
                 .collect(Collectors.toList());
     }
 

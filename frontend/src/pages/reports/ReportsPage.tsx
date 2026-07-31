@@ -162,13 +162,25 @@ export const ReportsPage = () => {
               <div className="h-80 w-full">
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={report.breakdown}>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                    <XAxis dataKey="month" />
-                    <YAxis width={85} tickFormatter={(value) => formatCurrency(value)} />
-                    <Tooltip cursor={{ fill: 'transparent' }} />
+                    <CartesianGrid strokeDasharray="3 3" stroke="#334155" vertical={false} />
+                    <XAxis dataKey="month" stroke="#94a3b8" />
+                    <YAxis width={85} stroke="#94a3b8" tickFormatter={(value) => formatCurrency(value)} />
+                    <Tooltip
+                      contentStyle={{
+                        backgroundColor: '#1e293b',
+                        borderColor: '#334155',
+                        borderRadius: '0.75rem',
+                        color: '#f8fafc',
+                        boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.5)'
+                      }}
+                      formatter={(val: any, name: any) => [
+                        formatCurrency(Number(val)),
+                        name === 'revenue' || name === 'Revenue' ? 'Revenue' : 'Expense'
+                      ]}
+                    />
                     <Legend />
-                    <Bar dataKey="revenue" name="Revenue" fill="#16a34a" radius={[4, 4, 0, 0]} />
-                    <Bar dataKey="expense" name="Expense" fill="#dc2626" radius={[4, 4, 0, 0]} />
+                    <Bar dataKey="revenue" name="Revenue" fill="#10b981" radius={[6, 6, 0, 0]} minPointSize={4} />
+                    <Bar dataKey="expense" name="Expense" fill="#f43f5e" radius={[6, 6, 0, 0]} minPointSize={4} />
                   </BarChart>
                 </ResponsiveContainer>
               </div>

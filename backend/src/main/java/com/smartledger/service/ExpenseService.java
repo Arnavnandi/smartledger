@@ -215,7 +215,7 @@ public class ExpenseService {
     private void updateExpenseFromRequest(Expense expense, Company company, ExpenseRequest request) {
         expense.setVendorName(request.getVendorName());
         expense.setAmount(currencyService.convertToBase(request.getAmount(), company.getCurrency()));
-        expense.setExpenseDate(request.getExpenseDate());
+        expense.setExpenseDate(request.getExpenseDate() != null ? request.getExpenseDate() : LocalDate.now());
         
         if (request.getCategoryId() != null) {
             ExpenseCategory category = categoryRepository.findByIdAndCompany(request.getCategoryId(), company)
