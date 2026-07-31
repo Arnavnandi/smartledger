@@ -64,12 +64,24 @@ public class CurrencyService {
             return BigDecimal.ONE;
         }
 
-        if (ratesCache.containsKey(targetCurrency.toUpperCase())) {
-            return BigDecimal.valueOf(ratesCache.get(targetCurrency.toUpperCase()));
+        String upper = targetCurrency.toUpperCase();
+        if (ratesCache.containsKey(upper)) {
+            return BigDecimal.valueOf(ratesCache.get(upper));
         }
 
-        logger.warn("Exchange rate for {} not found. Falling back to 1:1", targetCurrency);
-        return BigDecimal.ONE;
+        // Hardcoded static fallback rates (relative to 1 INR) if API is unreachable
+        switch (upper) {
+            case "USD": return BigDecimal.valueOf(0.0119);
+            case "EUR": return BigDecimal.valueOf(0.0110);
+            case "GBP": return BigDecimal.valueOf(0.0093);
+            case "CAD": return BigDecimal.valueOf(0.0163);
+            case "AUD": return BigDecimal.valueOf(0.0182);
+            case "JPY": return BigDecimal.valueOf(1.8100);
+            case "AED": return BigDecimal.valueOf(0.0438);
+            default:
+                logger.warn("Exchange rate for {} not found. Falling back to 1:1", targetCurrency);
+                return BigDecimal.ONE;
+        }
     }
 
     /**
@@ -78,7 +90,7 @@ public class CurrencyService {
     public BigDecimal convertToDisplay(BigDecimal baseAmount, String displayCurrency) {
         if (baseAmount == null) return BigDecimal.ZERO;
         if (displayCurrency == null || "INR".equalsIgnoreCase(displayCurrency)) {
-            return baseAmount;
+            return baseAmount.setScale(2, RoundingMode.HALF_UP);
         }
         BigDecimal rate = getRate(displayCurrency);
         return baseAmount.multiply(rate).setScale(2, RoundingMode.HALF_UP);
@@ -90,11 +102,11 @@ public class CurrencyService {
     public BigDecimal convertToBase(BigDecimal displayAmount, String displayCurrency) {
         if (displayAmount == null) return BigDecimal.ZERO;
         if (displayCurrency == null || "INR".equalsIgnoreCase(displayCurrency)) {
-            return displayAmount;
+            return displayAmount.setScale(2, RoundingMode.HALF_UP);
         }
         BigDecimal rate = getRate(displayCurrency);
-        if (rate.compareTo(BigDecimal.ZERO) == 0) return displayAmount; // Guard against div by zero
-        return displayAmount.divide(rate, 2, RoundingMode.HALF_UP);
+        if (rate.compareTo(BigDecimal.ZERO) == 0) return displayAmount;
+        return displayAmount.divide(rate, 6, RoundingMode.HALF_UP);
     }
 
     /**
