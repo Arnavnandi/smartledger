@@ -135,19 +135,19 @@ export const DashboardLayout = () => {
   const userInitials = user?.username ? user.username.substring(0, 2).toUpperCase() : 'SL';
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex font-sans">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 flex font-sans transition-colors duration-300">
       {/* Sidebar Desktop */}
-      <aside className="w-64 bg-slate-900/90 border-r border-slate-800 hidden md:flex flex-col shrink-0 backdrop-blur-xl">
+      <aside className="w-64 bg-white/90 dark:bg-slate-900/90 border-r border-slate-200 dark:border-slate-800 hidden md:flex flex-col shrink-0 backdrop-blur-xl transition-colors duration-300">
         {/* Brand Header */}
-        <div className="p-5 border-b border-slate-800 flex items-center gap-3">
+        <div className="p-5 border-b border-slate-200 dark:border-slate-800 flex items-center gap-3">
           <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-indigo-500 via-purple-500 to-emerald-400 flex items-center justify-center shadow-glow-indigo text-slate-950 font-black">
             <Sparkles className="w-5 h-5 text-slate-950 fill-current" />
           </div>
           <div>
-            <h2 className="text-lg font-extrabold tracking-tight bg-gradient-to-r from-white via-slate-200 to-indigo-300 bg-clip-text text-transparent">
+            <h2 className="text-lg font-extrabold tracking-tight bg-gradient-to-r from-slate-900 via-slate-700 to-indigo-600 dark:from-white dark:via-slate-200 dark:to-indigo-300 bg-clip-text text-transparent">
               SmartLedger
             </h2>
-            <p className="text-[10px] text-emerald-400 font-semibold tracking-wider uppercase">
+            <p className="text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold tracking-wider uppercase">
               {company?.name || 'Pro Financials'}
             </p>
           </div>
@@ -163,14 +163,14 @@ export const DashboardLayout = () => {
                 to={item.path}
                 className={`relative group flex items-center px-3.5 py-2.5 rounded-xl font-medium text-sm transition-all duration-200 ${
                   isActive
-                    ? 'bg-gradient-to-r from-indigo-600/30 to-violet-600/20 text-white border border-indigo-500/30 shadow-glow-indigo font-semibold'
-                    : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60'
+                    ? 'bg-gradient-to-r from-indigo-500/15 to-violet-500/10 dark:from-indigo-600/30 dark:to-violet-600/20 text-indigo-600 dark:text-white border border-indigo-500/30 shadow-glow-indigo font-semibold'
+                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800/60'
                 }`}
               >
                 {isActive && (
                   <span className="absolute left-0 top-2 bottom-2 w-1 bg-indigo-500 rounded-r-full shadow-glow-indigo"></span>
                 )}
-                <item.icon className={`w-4 h-4 mr-3 transition-colors ${isActive ? 'text-indigo-400' : 'text-slate-400 group-hover:text-slate-300'}`} />
+                <item.icon className={`w-4 h-4 mr-3 transition-colors ${isActive ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-500 dark:text-slate-400 group-hover:text-slate-800 dark:group-hover:text-slate-300'}`} />
                 {item.name}
               </Link>
             );
@@ -178,22 +178,22 @@ export const DashboardLayout = () => {
         </nav>
 
         {/* User Footer Profile */}
-        <div className="p-3 border-t border-slate-800/80 bg-slate-900/60">
-          <div className="flex items-center justify-between p-2 rounded-xl bg-slate-800/40 border border-slate-700/40">
+        <div className="p-3 border-t border-slate-200 dark:border-slate-800/80 bg-slate-100/60 dark:bg-slate-900/60">
+          <div className="flex items-center justify-between p-2 rounded-xl bg-white dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700/40">
             <div className="flex items-center space-x-3 overflow-hidden">
-              <div className="w-8 h-8 rounded-lg bg-indigo-500/20 border border-indigo-500/40 flex items-center justify-center text-xs font-bold text-indigo-400 shrink-0">
+              <div className="w-8 h-8 rounded-lg bg-indigo-500/20 border border-indigo-500/40 flex items-center justify-center text-xs font-bold text-indigo-600 dark:text-indigo-400 shrink-0">
                 {userInitials}
               </div>
               <div className="truncate">
-                <p className="text-xs font-semibold text-slate-200 truncate">{user?.username}</p>
-                <p className="text-[10px] text-slate-400 truncate">Account Active</p>
+                <p className="text-xs font-semibold text-slate-800 dark:text-slate-200 truncate">{user?.username}</p>
+                <p className="text-[10px] text-slate-500 dark:text-slate-400 truncate">Account Active</p>
               </div>
             </div>
             <Button 
               variant="ghost" 
               size="icon" 
               onClick={logout}
-              className="h-8 w-8 text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 transition-colors"
+              className="h-8 w-8 text-slate-500 dark:text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-500/10 transition-colors"
               title="Log out"
             >
               <LogOut className="w-4 h-4" />
@@ -203,27 +203,27 @@ export const DashboardLayout = () => {
       </aside>
 
       {/* Main Content Area */}
-      <main className="flex-1 flex flex-col h-screen overflow-hidden bg-slate-950">
+      <main className="flex-1 flex flex-col h-screen overflow-hidden bg-slate-50 dark:bg-slate-950 transition-colors duration-300">
         {/* Top Header */}
-        <header className="h-16 px-6 border-b border-slate-800/80 bg-slate-900/40 backdrop-blur-xl flex justify-between items-center shrink-0">
+        <header className="h-16 px-6 border-b border-slate-200 dark:border-slate-800/80 bg-white/80 dark:bg-slate-900/40 backdrop-blur-xl flex justify-between items-center shrink-0 transition-colors duration-300">
           {/* Mobile Menu Button */}
           <div className="flex items-center gap-3 md:hidden">
             <Button 
               variant="ghost" 
               size="icon" 
               onClick={() => setSidebarOpen(!sidebarOpen)}
-              className="text-slate-300"
+              className="text-slate-700 dark:text-slate-300"
             >
               {sidebarOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
             </Button>
-            <h2 className="text-base font-bold bg-gradient-to-r from-white to-indigo-300 bg-clip-text text-transparent">
+            <h2 className="text-base font-bold bg-gradient-to-r from-slate-900 to-indigo-600 dark:from-white dark:to-indigo-300 bg-clip-text text-transparent">
               SmartLedger
             </h2>
           </div>
 
-          <div className="hidden md:flex items-center text-xs font-medium text-slate-400 bg-slate-800/40 border border-slate-700/40 px-3 py-1.5 rounded-lg">
-            <span className="w-2 h-2 rounded-full bg-emerald-400 mr-2 animate-pulse"></span>
-            Base Currency: <strong className="text-slate-200 ml-1">{company?.currency || 'INR'}</strong>
+          <div className="hidden md:flex items-center text-xs font-medium text-slate-600 dark:text-slate-400 bg-slate-100 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700/40 px-3 py-1.5 rounded-lg">
+            <span className="w-2 h-2 rounded-full bg-emerald-500 dark:bg-emerald-400 mr-2 animate-pulse"></span>
+            Base Currency: <strong className="text-slate-800 dark:text-slate-200 ml-1">{company?.currency || 'INR'}</strong>
           </div>
 
           {/* Header Right Actions */}
@@ -241,14 +241,14 @@ export const DashboardLayout = () => {
 
         {/* Mobile Slide-out Nav */}
         {sidebarOpen && (
-          <nav className="md:hidden bg-slate-900 border-b border-slate-800 p-4 space-y-1 shrink-0 z-50">
+          <nav className="md:hidden bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 p-4 space-y-1 shrink-0 z-50">
             {navItems.map((item) => (
               <Link
                 key={item.path}
                 to={item.path}
                 onClick={() => setSidebarOpen(false)}
                 className={`flex items-center px-4 py-2.5 rounded-xl text-sm font-medium ${
-                  location.pathname === item.path ? 'bg-indigo-600/30 text-indigo-300' : 'text-slate-400 hover:bg-slate-800'
+                  location.pathname === item.path ? 'bg-indigo-50 dark:bg-indigo-600/30 text-indigo-600 dark:text-indigo-300' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
                 }`}
               >
                 <item.icon className="w-4 h-4 mr-3" />
@@ -262,7 +262,7 @@ export const DashboardLayout = () => {
         )}
 
         {/* View Page Content */}
-        <div className="flex-1 p-6 md:p-8 overflow-y-auto bg-slate-950">
+        <div className="flex-1 p-6 md:p-8 overflow-y-auto bg-slate-50 dark:bg-slate-950 transition-colors duration-300">
           <Outlet />
         </div>
       </main>
