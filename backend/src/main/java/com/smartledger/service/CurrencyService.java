@@ -109,4 +109,14 @@ public class CurrencyService {
         if (displayAmount == null) return 0.0;
         return convertToBase(BigDecimal.valueOf(displayAmount), displayCurrency).doubleValue();
     }
+
+    public BigDecimal convertAnyCurrency(BigDecimal amount, String fromCurrency, String toCurrency) {
+        if (amount == null) return BigDecimal.ZERO;
+        if (fromCurrency == null || fromCurrency.isBlank()) fromCurrency = "INR";
+        if (toCurrency == null || toCurrency.isBlank()) toCurrency = "INR";
+        if (fromCurrency.equalsIgnoreCase(toCurrency)) return amount;
+
+        BigDecimal baseInr = convertToBase(amount, fromCurrency);
+        return convertToDisplay(baseInr, toCurrency);
+    }
 }

@@ -21,10 +21,14 @@ public class ExpenseRequest {
 
     private Long categoryId;
     private String category; // For AI extraction
+    private String detectedCurrency; // For AI currency extraction (USD, EUR, GBP, etc.)
     private String description;
     private String receiptUrl;
     
     private RecurringFrequency recurringFrequency = RecurringFrequency.NONE;
+
+    public String getDetectedCurrency() { return detectedCurrency; }
+    public void setDetectedCurrency(String detectedCurrency) { this.detectedCurrency = detectedCurrency; }
 
     public String getVendorName() { return vendorName; }
     public void setVendorName(String vendorName) { this.vendorName = vendorName; }

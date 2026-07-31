@@ -162,7 +162,7 @@ public class AiService {
         headers.setContentType(MediaType.APPLICATION_JSON);
 
         String prompt = "You are an AI accountant. Analyze this receipt image and extract the following details into a structured JSON object: " +
-                "'vendorName' (string), 'amount' (number, total amount), 'expenseDate' (string, YYYY-MM-DD), 'category' (string, guess based on items). " +
+                "'vendorName' (string), 'amount' (number, total amount printed on receipt), 'detectedCurrency' (string, ISO 3-letter currency code detected e.g. USD, EUR, GBP, INR, CAD, AUD, JPY, AED), 'expenseDate' (string, YYYY-MM-DD), 'category' (string, guess based on items). " +
                 "Return ONLY a valid JSON object. No Markdown blocks, no additional text.";
 
         String base64Image = java.util.Base64.getEncoder().encodeToString(imageBytes);

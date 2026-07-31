@@ -183,6 +183,27 @@ public class ExpenseService {
             objectMapper.configure(com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
             ExpenseRequest request = objectMapper.readValue(jsonResult, ExpenseRequest.class);
             request.setReceiptUrl(fileUrl);
+
+            // 4. Automatic AI Currency Conversion to Company Base Currency
+            String companyCurrency = (company.getCurrency() != null && !company.getCurrency().isBlank()) ? company.getCurrency().toUpperCase() : "INR";
+            String detectedCurrency = (request.getDetectedCurrency() != null && !request.getDetectedCurrency().isBlank()) ? request.getDetectedCurrency().toUpperCase() : companyCurrency;
+
+            if (request.getAmount() != null && !detectedCurrency.equalsIgnoreCase(companyCurrency)) {
+                java.math.BigDecimal originalAmount = request.getAmount();
+                java.math.BigDecimal convertedAmount = currencyService.convertAnyCurrency(originalAmount, detectedCurrency, companyCurrency);
+                
+                request.setAmount(convertedAmount);
+                
+                String conversionNote = String.format("[Auto-converted from %s %.2f -> %s %.2f]",
+                        detectedCurrency, originalAmount, companyCurrency, convertedAmount);
+                
+                if (request.getDescription() == null || request.getDescription().isBlank()) {
+                    request.setDescription(conversionNote);
+                } else {
+                    request.setDescription(request.getDescription() + " " + conversionNote);
+                }
+            }
+
             return request;
         } catch (Exception e) {
             System.err.println("Failed to parse Gemini response: " + e.getMessage());
