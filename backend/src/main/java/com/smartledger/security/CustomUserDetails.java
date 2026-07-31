@@ -56,6 +56,7 @@ public class CustomUserDetails implements UserDetails {
     }
 
     @Override
+    @com.fasterxml.jackson.annotation.JsonIgnore
     public String getPassword() {
         return password;
     }
