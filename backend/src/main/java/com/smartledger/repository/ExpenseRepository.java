@@ -21,11 +21,11 @@ public interface ExpenseRepository extends JpaRepository<Expense, Long>, JpaSpec
     @org.springframework.data.jpa.repository.EntityGraph(attributePaths = {"category"})
     Page<Expense> findByCompany(Company company, Pageable pageable);
 
-    @Query("SELECT e FROM Expense e WHERE e.company = :company")
+    @Query("SELECT e FROM Expense e WHERE e.company.id = :#{#company.id}")
     List<Expense> findAllByCompany(@Param("company") Company company);
 
     @org.springframework.data.jpa.repository.EntityGraph(attributePaths = {"category"})
-    @Query("SELECT e FROM Expense e LEFT JOIN e.category c WHERE e.company = :company AND " +
+    @Query("SELECT e FROM Expense e LEFT JOIN e.category c WHERE e.company.id = :#{#company.id} AND " +
            "(LOWER(e.vendorName) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
            "LOWER(c.name) LIKE LOWER(CONCAT('%', :search, '%')))")
     Page<Expense> searchByCompanyAndKeyword(@Param("company") Company company, 
@@ -35,7 +35,7 @@ public interface ExpenseRepository extends JpaRepository<Expense, Long>, JpaSpec
     Optional<Expense> findByIdAndCompany(Long id, Company company);
 
     // Used for duplicate detection
-    @Query("SELECT e FROM Expense e WHERE e.company = :company AND LOWER(e.vendorName) = LOWER(:vendorName) AND e.amount = :amount AND e.expenseDate BETWEEN :startDate AND :endDate AND e.id != :excludeId")
+    @Query("SELECT e FROM Expense e WHERE e.company.id = :#{#company.id} AND LOWER(e.vendorName) = LOWER(:vendorName) AND e.amount = :amount AND e.expenseDate BETWEEN :startDate AND :endDate AND e.id != :excludeId")
     List<Expense> findPotentialDuplicates(
             @Param("company") Company company,
             @Param("vendorName") String vendorName,
@@ -46,9 +46,9 @@ public interface ExpenseRepository extends JpaRepository<Expense, Long>, JpaSpec
     );
 
     // Dashboard Aggregations
-    @Query("SELECT SUM(e.amount) FROM Expense e WHERE e.company = :company")
+    @Query("SELECT SUM(e.amount) FROM Expense e WHERE e.company.id = :#{#company.id}")
     BigDecimal sumTotalExpenses(@Param("company") Company company);
 
-    @Query("SELECT e FROM Expense e WHERE e.company = :company AND (e.expenseDate >= :startDate OR e.expenseDate IS NULL)")
+    @Query("SELECT e FROM Expense e WHERE e.company.id = :#{#company.id} AND (e.expenseDate >= :startDate OR e.expenseDate IS NULL)")
     List<Expense> findExpensesSince(@Param("company") Company company, @Param("startDate") LocalDate startDate);
 }

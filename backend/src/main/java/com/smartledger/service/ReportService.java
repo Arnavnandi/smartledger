@@ -60,10 +60,33 @@ public class ReportService {
         double convertedExp = currencyService.convertToDisplay(totalExpenses, company.getCurrency());
         double convertedNet = convertedRev - convertedExp;
         
-        // Breakdown by week (simplified to just weeks in month)
+        // Breakdown by week (Week 1: days 1-7, Week 2: days 8-14, Week 3: days 15-21, Week 4: days 22+)
+        Map<String, double[]> weeklyTotals = new LinkedHashMap<>();
+        weeklyTotals.put("Week 1", new double[]{0.0, 0.0});
+        weeklyTotals.put("Week 2", new double[]{0.0, 0.0});
+        weeklyTotals.put("Week 3", new double[]{0.0, 0.0});
+        weeklyTotals.put("Week 4", new double[]{0.0, 0.0});
+
+        for (Invoice inv : invoices) {
+            LocalDate date = inv.getIssueDate() != null ? inv.getIssueDate() : (inv.getCreatedAt() != null ? inv.getCreatedAt().toLocalDate() : startDate);
+            int day = date.getDayOfMonth();
+            String wKey = day <= 7 ? "Week 1" : (day <= 14 ? "Week 2" : (day <= 21 ? "Week 3" : "Week 4"));
+            weeklyTotals.get(wKey)[0] += inv.getTotalAmount();
+        }
+
+        for (Expense exp : expenses) {
+            LocalDate date = exp.getExpenseDate() != null ? exp.getExpenseDate() : (exp.getCreatedAt() != null ? exp.getCreatedAt().toLocalDate() : startDate);
+            int day = date.getDayOfMonth();
+            String wKey = day <= 7 ? "Week 1" : (day <= 14 ? "Week 2" : (day <= 21 ? "Week 3" : "Week 4"));
+            weeklyTotals.get(wKey)[1] += exp.getAmount().doubleValue();
+        }
+
         List<ChartDataPoint> breakdown = new ArrayList<>();
-        // Simplify: just return the totals for this specific month as 1 point
-        breakdown.add(new ChartDataPoint("Week 1-4", convertedRev, convertedExp));
+        for (Map.Entry<String, double[]> entry : weeklyTotals.entrySet()) {
+            double rev = currencyService.convertToDisplay(entry.getValue()[0], company.getCurrency());
+            double exp = currencyService.convertToDisplay(entry.getValue()[1], company.getCurrency());
+            breakdown.add(new ChartDataPoint(entry.getKey(), rev, exp));
+        }
         
         List<InvoiceResponse> topInvoices = invoices.stream()
                 .sorted((a, b) -> Double.compare(b.getTotalAmount(), a.getTotalAmount()))
@@ -106,12 +129,13 @@ public class ReportService {
         
         Map<String, ChartDataPoint> monthlyData = new LinkedHashMap<>();
         for (int i = 1; i <= 12; i++) {
-            String monthName = LocalDate.of(year, i, 1).format(DateTimeFormatter.ofPattern("MMM"));
+            String monthName = LocalDate.of(year, i, 1).format(DateTimeFormatter.ofPattern("MMM", Locale.ENGLISH));
             monthlyData.put(monthName, new ChartDataPoint(monthName, 0.0, 0.0));
         }
         
         for (Invoice inv : invoices) {
-            String m = inv.getIssueDate().format(DateTimeFormatter.ofPattern("MMM"));
+            LocalDate date = inv.getIssueDate() != null ? inv.getIssueDate() : (inv.getCreatedAt() != null ? inv.getCreatedAt().toLocalDate() : LocalDate.now());
+            String m = date.format(DateTimeFormatter.ofPattern("MMM", Locale.ENGLISH));
             if (monthlyData.containsKey(m)) {
                 ChartDataPoint pt = monthlyData.get(m);
                 monthlyData.put(m, new ChartDataPoint(m, pt.getRevenue() + inv.getTotalAmount(), pt.getExpense()));
@@ -119,7 +143,8 @@ public class ReportService {
         }
         
         for (Expense exp : expenses) {
-            String m = exp.getExpenseDate().format(DateTimeFormatter.ofPattern("MMM"));
+            LocalDate date = exp.getExpenseDate() != null ? exp.getExpenseDate() : (exp.getCreatedAt() != null ? exp.getCreatedAt().toLocalDate() : LocalDate.now());
+            String m = date.format(DateTimeFormatter.ofPattern("MMM", Locale.ENGLISH));
             if (monthlyData.containsKey(m)) {
                 ChartDataPoint pt = monthlyData.get(m);
                 monthlyData.put(m, new ChartDataPoint(m, pt.getRevenue(), pt.getExpense() + exp.getAmount().doubleValue()));

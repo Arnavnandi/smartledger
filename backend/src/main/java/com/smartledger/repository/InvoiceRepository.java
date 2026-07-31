@@ -29,18 +29,18 @@ public interface InvoiceRepository extends JpaRepository<Invoice, Long>, JpaSpec
                                            Pageable pageable);
 
     // Dashboard Aggregations
-    @Query("SELECT SUM(i.totalAmount) FROM Invoice i WHERE i.company = :company AND i.status = 'PAID'")
+    @Query("SELECT SUM(i.totalAmount) FROM Invoice i WHERE i.company.id = :#{#company.id} AND i.status = 'PAID'")
     Double sumPaidRevenue(@Param("company") Company company);
 
-    @Query("SELECT SUM(i.totalAmount) FROM Invoice i WHERE i.company = :company AND i.status IN ('PENDING', 'OVERDUE')")
+    @Query("SELECT SUM(i.totalAmount) FROM Invoice i WHERE i.company.id = :#{#company.id} AND i.status IN ('PENDING', 'OVERDUE')")
     Double sumPendingRevenue(@Param("company") Company company);
 
     @Query("SELECT new com.smartledger.model.dto.TopClientDTO(c.id, c.name, SUM(i.totalAmount)) " +
-           "FROM Invoice i JOIN i.client c WHERE i.company = :company AND i.status = 'PAID' " +
+           "FROM Invoice i JOIN i.client c WHERE i.company.id = :#{#company.id} AND i.status = 'PAID' " +
            "GROUP BY c.id, c.name ORDER BY SUM(i.totalAmount) DESC")
     List<com.smartledger.model.dto.TopClientDTO> findTopClients(@Param("company") Company company, Pageable pageable);
 
-    @Query("SELECT i FROM Invoice i WHERE i.company = :company AND i.status = 'PAID' AND i.issueDate >= :startDate")
+    @Query("SELECT i FROM Invoice i WHERE i.company.id = :#{#company.id} AND i.status = 'PAID' AND i.issueDate >= :startDate")
     List<Invoice> findPaidInvoicesSince(@Param("company") Company company, @Param("startDate") java.time.LocalDate startDate);
 
     @org.springframework.data.jpa.repository.EntityGraph(attributePaths = {"client", "items"})

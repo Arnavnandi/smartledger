@@ -27,6 +27,8 @@ public class DashboardService {
     private final AuthContextService authContextService;
     private final CurrencyService currencyService;
 
+    private static final org.slf4j.Logger logger = org.slf4j.LoggerFactory.getLogger(DashboardService.class);
+
     public DashboardService(InvoiceRepository invoiceRepository, 
                             ExpenseRepository expenseRepository, 
                             AiService aiService,
@@ -48,6 +50,7 @@ public class DashboardService {
         Double totalExpenses = currencyService.convertToDisplay(totalExpensesBd != null ? totalExpensesBd.doubleValue() : 0.0, company.getCurrency());
         Double pendingPayments = currencyService.convertToDisplay(invoiceRepository.sumPendingRevenue(company), company.getCurrency());
         
+        logger.info("[ANALYTICS SUMMARY] Email: {}, TotalRev: {}, TotalExp: {}, Pending: {}", email, totalRevenue, totalExpenses, pendingPayments);
         return new DashboardSummaryResponse(totalRevenue, totalExpenses, pendingPayments);
     }
 
@@ -67,6 +70,9 @@ public class DashboardService {
         
         List<Invoice> recentInvoices = invoiceRepository.findPaidInvoicesSince(company, startDate);
         List<Expense> allExpenses = expenseRepository.findAllByCompany(company);
+
+        logger.info("[ANALYTICS CASH-FLOW] CompanyId: {}, Fetched Invoices: {}, Fetched Expenses: {}", 
+                company.getId(), recentInvoices != null ? recentInvoices.size() : 0, allExpenses != null ? allExpenses.size() : 0);
 
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MMM yyyy", Locale.ENGLISH);
         Map<String, double[]> monthlyTotals = new LinkedHashMap<>();
@@ -92,7 +98,7 @@ public class DashboardService {
             }
         }
 
-        // Aggregate Expenses (if expense date is in range, add to its month; if older/null, fallback to current or earliest month)
+        // Aggregate Expenses
         if (allExpenses != null) {
             for (Expense exp : allExpenses) {
                 LocalDate date = exp.getExpenseDate() != null 
@@ -101,17 +107,17 @@ public class DashboardService {
                 
                 String label = date.format(formatter);
                 double amt = exp.getAmount() != null ? exp.getAmount().doubleValue() : 0.0;
+                logger.info("[EXPENSE AGGREGATE] Id: {}, Vendor: {}, Amount: {}, Date: {}, MappedLabel: {}", 
+                        exp.getId(), exp.getVendorName(), amt, date, label);
                 
                 if (monthlyTotals.containsKey(label)) {
                     monthlyTotals.get(label)[1] += amt;
                 } else if (date.isBefore(startDate)) {
-                    // Attribute older expenses to the earliest month in chart
                     String earliestLabel = LocalDate.now().minusMonths(months - 1).format(formatter);
                     if (monthlyTotals.containsKey(earliestLabel)) {
                         monthlyTotals.get(earliestLabel)[1] += amt;
                     }
                 } else {
-                    // Attribute future/latest expenses to the latest month (current month)
                     String currentLabel = LocalDate.now().format(formatter);
                     if (monthlyTotals.containsKey(currentLabel)) {
                         monthlyTotals.get(currentLabel)[1] += amt;
@@ -129,6 +135,7 @@ public class DashboardService {
             Double revDisplay = currencyService.convertToDisplay(revInr, company.getCurrency());
             Double expDisplay = currencyService.convertToDisplay(expInr, company.getCurrency());
             
+            logger.info("[CHART POINT] Month: {}, RevDisplay: {}, ExpDisplay: {}", month, revDisplay, expDisplay);
             result.add(new ChartDataPoint(month, revDisplay, expDisplay));
         }
 
