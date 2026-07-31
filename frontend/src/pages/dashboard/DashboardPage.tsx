@@ -235,11 +235,14 @@ export const DashboardPage = () => {
                           color: '#f8fafc',
                           boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.5)'
                         }}
-                        formatter={(val: any) => [formatCurrency(Number(val)), '']}
+                        formatter={(val: any, name: any) => [
+                          formatCurrency(Number(val)),
+                          name === 'revenue' || name === 'Revenue' ? 'Revenue' : 'Expense'
+                        ]}
                       />
                       <Legend verticalAlign="top" align="right" height={36} iconType="circle" />
-                      <Area type="monotone" dataKey="revenue" name="Revenue" stroke="#10b981" strokeWidth={3} fillOpacity={1} fill="url(#colorRev)" />
-                      <Area type="monotone" dataKey="expense" name="Expense" stroke="#f43f5e" strokeWidth={3} fillOpacity={1} fill="url(#colorExp)" />
+                      <Area type="monotone" dataKey="revenue" name="Revenue" stroke="#10b981" strokeWidth={3} fillOpacity={1} fill="url(#colorRev)" dot={{ r: 4, fill: '#10b981' }} activeDot={{ r: 6 }} />
+                      <Area type="monotone" dataKey="expense" name="Expense" stroke="#f43f5e" strokeWidth={3} fillOpacity={1} fill="url(#colorExp)" dot={{ r: 4, fill: '#f43f5e' }} activeDot={{ r: 6 }} />
                     </AreaChart>
                   </ResponsiveContainer>
                 </div>

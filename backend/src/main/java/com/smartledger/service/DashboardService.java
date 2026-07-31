@@ -66,12 +66,12 @@ public class DashboardService {
         LocalDate startDate = LocalDate.now().minusMonths(months - 1).withDayOfMonth(1);
         
         List<Invoice> recentInvoices = invoiceRepository.findPaidInvoicesSince(company, startDate);
-        List<Expense> recentExpenses = expenseRepository.findExpensesSince(company, startDate);
+        List<Expense> allExpenses = expenseRepository.findAllByCompany(company);
 
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MMM yyyy", Locale.ENGLISH);
         Map<String, double[]> monthlyTotals = new LinkedHashMap<>();
         
-        // Initialize 6 months in chronological order
+        // Initialize months in chronological order
         for (int i = months - 1; i >= 0; i--) {
             java.time.YearMonth ym = java.time.YearMonth.now().minusMonths(i);
             String label = ym.format(formatter);
@@ -92,16 +92,30 @@ public class DashboardService {
             }
         }
 
-        // Aggregate Expenses
-        if (recentExpenses != null) {
-            for (Expense exp : recentExpenses) {
+        // Aggregate Expenses (if expense date is in range, add to its month; if older/null, fallback to current or earliest month)
+        if (allExpenses != null) {
+            for (Expense exp : allExpenses) {
                 LocalDate date = exp.getExpenseDate() != null 
                         ? exp.getExpenseDate() 
                         : (exp.getCreatedAt() != null ? exp.getCreatedAt().toLocalDate() : LocalDate.now());
+                
                 String label = date.format(formatter);
+                double amt = exp.getAmount() != null ? exp.getAmount().doubleValue() : 0.0;
+                
                 if (monthlyTotals.containsKey(label)) {
-                    double amt = exp.getAmount() != null ? exp.getAmount().doubleValue() : 0.0;
                     monthlyTotals.get(label)[1] += amt;
+                } else if (date.isBefore(startDate)) {
+                    // Attribute older expenses to the earliest month in chart
+                    String earliestLabel = LocalDate.now().minusMonths(months - 1).format(formatter);
+                    if (monthlyTotals.containsKey(earliestLabel)) {
+                        monthlyTotals.get(earliestLabel)[1] += amt;
+                    }
+                } else {
+                    // Attribute future/latest expenses to the latest month (current month)
+                    String currentLabel = LocalDate.now().format(formatter);
+                    if (monthlyTotals.containsKey(currentLabel)) {
+                        monthlyTotals.get(currentLabel)[1] += amt;
+                    }
                 }
             }
         }
