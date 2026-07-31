@@ -26,22 +26,16 @@ public class EmailService {
     private static final String BREVO_API_URL = "https://api.brevo.com/v3/smtp/email";
     private static final String RESEND_API_URL = "https://api.resend.com/emails";
 
-    @Value("${brevo.api-key:}")
+    @Value("${BREVO_API_KEY:${brevo.api-key:}}")
     private String brevoApiKey;
 
-    @Value("${brevo.sender-email:}")
+    @Value("${BREVO_SENDER_EMAIL:${MAIL_USERNAME:${brevo.sender-email:}}}")
     private String brevoSenderEmail;
 
-    @Value("${brevo.sender-name:SmartLedger}")
+    @Value("${BREVO_SENDER_NAME:${brevo.sender-name:SmartLedger}}")
     private String brevoSenderName;
 
-    @Value("${resend.api-key:}")
-    private String resendApiKey;
-
-    @Value("${resend.from-email:SmartLedger <onboarding@resend.dev>}")
-    private String fromEmail;
-
-    @Value("${app.frontend-url:http://localhost:5173}")
+    @Value("${FRONTEND_URL:${app.frontend-url:http://localhost:5173}}")
     private String frontendUrl;
 
     private final HttpClient httpClient;
@@ -154,6 +148,7 @@ public class EmailService {
     }
 
     private void dispatchEmail(String to, String subject, String htmlContent, List<Map<String, Object>> attachments) {
+        logger.info("Email Service dispatching email to recipient: '{}', Subject: '{}'", to, subject);
         if (brevoApiKey == null || brevoApiKey.trim().isEmpty()) {
             logger.error("BREVO_API_KEY environment variable is missing or blank.");
             throw new EmailDeliveryException("Failed to send email: BREVO_API_KEY is not configured.");
@@ -165,7 +160,14 @@ public class EmailService {
         try {
             Map<String, Object> bodyMap = new HashMap<>();
             String name = (brevoSenderName != null && !brevoSenderName.isBlank()) ? brevoSenderName : "SmartLedger";
-            String email = (brevoSenderEmail != null && !brevoSenderEmail.isBlank()) ? brevoSenderEmail : "no-reply@smartledger.app";
+            String email = (brevoSenderEmail != null && !brevoSenderEmail.isBlank()) ? brevoSenderEmail : "";
+
+            if (email.isBlank()) {
+                logger.error("BREVO_SENDER_EMAIL is blank or not configured!");
+                throw new EmailDeliveryException("Failed to send email: BREVO_SENDER_EMAIL is not configured.");
+            }
+
+            logger.info("Sending HTTP POST to Brevo API. Sender: '{} <{}>', Recipient: '{}'", name, email, to);
 
             bodyMap.put("sender", Map.of("name", name, "email", email));
             bodyMap.put("to", List.of(Map.of("email", to)));
