@@ -29,6 +29,7 @@ import { AdminBusinessesPage } from './pages/admin/AdminBusinessesPage';
 import { AdminLogsPage } from './pages/admin/AdminLogsPage';
 
 import { PublicPaymentPage } from './pages/payment/PublicPaymentPage';
+import { ActivityPage } from './pages/activity/ActivityPage';
 
 const AppRoutes = () => {
   return (
@@ -57,6 +58,7 @@ const AppRoutes = () => {
           <Route path="/expenses" element={<ExpensesListPage />} />
           <Route path="/expenses/new" element={<ExpenseFormPage />} />
           <Route path="/reports" element={<ReportsPage />} />
+          <Route path="/activity" element={<ActivityPage />} />
         </Route>
       </Route>
       

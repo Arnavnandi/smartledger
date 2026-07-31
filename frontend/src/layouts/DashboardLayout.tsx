@@ -22,7 +22,8 @@ import {
   Search,
   User as UserIcon,
   Building2,
-  Command as CommandIcon
+  Command as CommandIcon,
+  Activity
 } from 'lucide-react';
 import { notificationService } from '../services/notification.service';
 import type { AppNotification } from '../types/notification.types';
@@ -98,6 +99,7 @@ export const DashboardLayout = () => {
     { name: 'Clients', path: '/clients', icon: Users },
     { name: 'Expenses', path: '/expenses', icon: Receipt },
     { name: 'Reports', path: '/reports', icon: PieChart },
+    { name: 'Activity Log', path: '/activity', icon: Activity },
     { name: 'Settings', path: '/settings', icon: Settings },
   ];
 

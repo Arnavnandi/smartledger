@@ -115,6 +115,14 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({ open, onOpenChan
               </Command.Item>
 
               <Command.Item
+                onSelect={() => runCommand(() => navigate('/activity'))}
+                className="flex items-center gap-2.5 px-3 py-2 rounded-xl cursor-pointer hover:bg-indigo-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 transition-colors"
+              >
+                <Sparkles className="w-4 h-4 text-indigo-500" />
+                <span>Go to Activity Log</span>
+              </Command.Item>
+
+              <Command.Item
                 onSelect={() => runCommand(() => navigate('/settings'))}
                 className="flex items-center gap-2.5 px-3 py-2 rounded-xl cursor-pointer hover:bg-indigo-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 transition-colors"
               >
