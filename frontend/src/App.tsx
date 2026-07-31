@@ -2,6 +2,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { AuthProvider } from './context/AuthContext';
 import { CompanyProvider } from './context/CompanyContext';
 import { ThemeProvider } from './context/ThemeContext';
+import { Toaster } from './components/ui/toaster';
 import { ProtectedRoute } from './components/shared/ProtectedRoute';
 import { DashboardLayout } from './layouts/DashboardLayout';
 import { DashboardPage } from './pages/dashboard/DashboardPage';
@@ -79,6 +80,7 @@ const AppRoutes = () => {
 function App() {
   return (
     <ThemeProvider>
+      <Toaster />
       <AuthProvider>
         <CompanyProvider>
           <Router>

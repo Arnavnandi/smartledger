@@ -3,7 +3,6 @@ import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useCompany } from '../context/CompanyContext';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { 
   LayoutDashboard, 
   FileText, 
@@ -22,11 +21,14 @@ import {
   ChevronRight,
   Search,
   User as UserIcon,
-  Building2
+  Building2,
+  Command as CommandIcon
 } from 'lucide-react';
 import { notificationService } from '../services/notification.service';
 import type { AppNotification } from '../types/notification.types';
 import { ThemeToggle } from '../components/shared/ThemeToggle';
+import { Breadcrumbs } from '../components/shared/Breadcrumbs';
+import { CommandPalette } from '../components/shared/CommandPalette';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -42,10 +44,16 @@ export const DashboardLayout = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-  const [globalSearch, setGlobalSearch] = useState('');
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
+    return localStorage.getItem('sidebar_collapsed') === 'true';
+  });
+  const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
   const [notifications, setNotifications] = useState<AppNotification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
+
+  useEffect(() => {
+    localStorage.setItem('sidebar_collapsed', sidebarCollapsed.toString());
+  }, [sidebarCollapsed]);
 
   useEffect(() => {
     fetchNotifications();
@@ -81,13 +89,6 @@ export const DashboardLayout = () => {
       fetchNotifications();
     } catch (err) {
       console.error(err);
-    }
-  };
-
-  const handleSearchSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (globalSearch.trim()) {
-      navigate(`/invoices?search=${encodeURIComponent(globalSearch.trim())}`);
     }
   };
 
@@ -180,6 +181,8 @@ export const DashboardLayout = () => {
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 flex font-sans transition-colors duration-300">
+      <CommandPalette open={commandPaletteOpen} onOpenChange={setCommandPaletteOpen} />
+
       {/* Sidebar Desktop */}
       <aside className={`${sidebarCollapsed ? 'w-20' : 'w-64'} bg-white/90 dark:bg-slate-900/90 border-r border-slate-200 dark:border-slate-800 hidden md:flex flex-col shrink-0 backdrop-blur-xl transition-all duration-300 relative z-20`}>
         {/* Collapse Toggle Floating Button */}
@@ -281,20 +284,25 @@ export const DashboardLayout = () => {
             </h2>
           </div>
 
-          {/* Search Box Header */}
-          <form onSubmit={handleSearchSubmit} className="hidden sm:flex items-center max-w-xs w-full relative">
-            <Search className="w-4 h-4 absolute left-3 text-slate-400" />
-            <Input
-              type="text"
-              placeholder="Search invoices, clients..."
-              value={globalSearch}
-              onChange={(e) => setGlobalSearch(e.target.value)}
-              className="pl-9 h-9 text-xs rounded-xl bg-slate-100/80 dark:bg-slate-800/50 border-slate-200 dark:border-slate-700/60 focus:bg-white dark:focus:bg-slate-800"
-            />
-          </form>
+          {/* Breadcrumbs Navigation */}
+          <div className="hidden md:flex items-center gap-3">
+            <Breadcrumbs />
+          </div>
 
-          {/* Header Right Actions */}
+          {/* Header Right Actions & Cmd+K Trigger */}
           <div className="flex items-center space-x-3 ml-auto">
+            {/* Quick Command Palette Button */}
+            <button
+              onClick={() => setCommandPaletteOpen(true)}
+              className="hidden sm:flex items-center gap-2 h-9 px-3 text-xs rounded-xl bg-slate-100/80 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700/60 text-slate-500 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-800 transition-all"
+            >
+              <Search className="w-3.5 h-3.5" />
+              <span>Search or command...</span>
+              <span className="flex items-center gap-0.5 text-[10px] font-mono px-1.5 py-0.5 rounded bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300 border border-slate-300 dark:border-slate-600">
+                <CommandIcon className="w-2.5 h-2.5" /> K
+              </span>
+            </button>
+
             <div className="hidden lg:flex items-center text-xs font-medium text-slate-600 dark:text-slate-400 bg-slate-100 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700/40 px-3 py-1.5 rounded-lg">
               <span className="w-2 h-2 rounded-full bg-emerald-500 dark:bg-emerald-400 mr-2 animate-pulse"></span>
               Currency: <strong className="text-slate-800 dark:text-slate-200 ml-1">{company?.currency || 'INR'}</strong>
