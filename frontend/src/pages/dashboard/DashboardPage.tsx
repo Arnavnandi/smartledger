@@ -122,7 +122,7 @@ export const DashboardPage = () => {
             </div>
             <div className="flex items-center text-xs text-emerald-400 font-medium mt-2">
               <TrendingUp className="w-3.5 h-3.5 mr-1" />
-              <span>+12.5% vs last period</span>
+              <span>All-Time Earnings</span>
             </div>
           </CardContent>
         </Card>
@@ -141,7 +141,7 @@ export const DashboardPage = () => {
               {formatCurrency(summary?.totalExpenses || 0)}
             </div>
             <div className="flex items-center text-xs text-slate-400 font-medium mt-2">
-              <span>Tracked & verified</span>
+              <span>All-Time Expenses</span>
             </div>
           </CardContent>
         </Card>
@@ -163,7 +163,7 @@ export const DashboardPage = () => {
             </div>
             <div className="flex items-center text-xs text-slate-400 font-medium mt-2">
               <Wallet className="w-3.5 h-3.5 mr-1 text-indigo-400" />
-              <span>Net bottom line</span>
+              <span>All-Time Net Profit</span>
             </div>
           </CardContent>
         </Card>
@@ -182,7 +182,7 @@ export const DashboardPage = () => {
               {formatCurrency(summary?.pendingPayments || 0)}
             </div>
             <div className="flex items-center text-xs text-amber-300/80 font-medium mt-2">
-              <span>Awaiting client payment</span>
+              <span>Awaiting Client Collection</span>
             </div>
           </CardContent>
         </Card>
