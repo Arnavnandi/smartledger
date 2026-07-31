@@ -5,21 +5,20 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { AnimatedCounter } from '../../components/shared/AnimatedCounter';
+import { ExecutiveCopilotWidget } from '../../components/shared/ExecutiveCopilotWidget';
+import { KpiExplanationModal } from '../../components/shared/KpiExplanationModal';
 import { dashboardService } from '../../services/dashboard.service';
 import type { DashboardSummary, ChartDataPoint, TopClient } from '../../types/dashboard.types';
 import { 
-  TrendingUp, 
-  TrendingDown, 
   DollarSign, 
   CreditCard, 
   Wallet, 
   AlertCircle,
   Plus,
   Receipt,
-  Sparkles,
-  RefreshCw,
   Users,
-  ArrowUpRight
+  ArrowUpRight,
+  Sparkles
 } from 'lucide-react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import { useCompany } from '../../context/CompanyContext';
@@ -32,8 +31,10 @@ export const DashboardPage = () => {
   const [chartData, setChartData] = useState<ChartDataPoint[]>([]);
   const [topClients, setTopClients] = useState<TopClient[]>([]);
   const [loading, setLoading] = useState(true);
-  const [insights, setInsights] = useState<string | null>(null);
-  const [insightsLoading, setInsightsLoading] = useState(false);
+
+  // KPI Modal State
+  const [selectedKpi, setSelectedKpi] = useState<string | null>(null);
+  const [selectedKpiValue, setSelectedKpiValue] = useState<number>(0);
 
   useEffect(() => {
     fetchDashboardData();
@@ -57,16 +58,9 @@ export const DashboardPage = () => {
     }
   };
 
-  const generateInsights = async () => {
-    setInsightsLoading(true);
-    try {
-      const result = await dashboardService.getInsights();
-      setInsights(result.insights);
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setInsightsLoading(false);
-    }
+  const handleKpiClick = (kpiName: string, val: number) => {
+    setSelectedKpi(kpiName);
+    setSelectedKpiValue(val);
   };
 
   const isPositiveProfit = (summary?.netProfit || 0) >= 0;
@@ -78,6 +72,12 @@ export const DashboardPage = () => {
       transition={{ duration: 0.35, ease: 'easeOut' }}
       className="space-y-8 max-w-7xl mx-auto"
     >
+      <KpiExplanationModal
+        kpiName={selectedKpi}
+        currentValue={selectedKpiValue}
+        onClose={() => setSelectedKpi(null)}
+      />
+
       {/* Header Bar */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
@@ -103,7 +103,7 @@ export const DashboardPage = () => {
         </div>
       </div>
 
-      {/* KPI Stat Cards */}
+      {/* Interactive KPI Stat Cards */}
       <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-4">
         {loading ? (
           Array.from({ length: 4 }).map((_, i) => (
@@ -116,7 +116,12 @@ export const DashboardPage = () => {
         ) : (
           <>
             {/* Revenue */}
-            <motion.div whileHover={{ y: -4 }} transition={{ duration: 0.2 }}>
+            <motion.div 
+              whileHover={{ y: -4 }} 
+              transition={{ duration: 0.2 }}
+              onClick={() => handleKpiClick('Total Revenue', summary?.totalRevenue || 0)}
+              className="cursor-pointer"
+            >
               <Card className="bg-white dark:bg-slate-900/70 border-slate-200 dark:border-slate-800 border-t-4 border-t-emerald-500 hover:border-emerald-500/50 transition-all duration-300 shadow-sm hover:shadow-glow-emerald rounded-2xl overflow-hidden relative group">
                 <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/5 rounded-full blur-2xl group-hover:bg-emerald-500/10 transition-all"></div>
                 <CardHeader className="flex flex-row items-center justify-between pb-2">
@@ -129,16 +134,20 @@ export const DashboardPage = () => {
                   <div className="text-3xl font-extrabold text-slate-900 dark:text-white">
                     <AnimatedCounter value={summary?.totalRevenue || 0} formatter={(val) => formatCurrency(val)} />
                   </div>
-                  <div className="flex items-center text-xs text-emerald-600 dark:text-emerald-400 font-medium mt-2">
-                    <TrendingUp className="w-3.5 h-3.5 mr-1" />
-                    <span>All-Time Earnings</span>
-                  </div>
+                  <p className="text-[11px] text-emerald-600 dark:text-emerald-400 mt-2 flex items-center gap-1 font-semibold">
+                    <Sparkles className="w-3 h-3" /> Click card for AI Analysis
+                  </p>
                 </CardContent>
               </Card>
             </motion.div>
 
             {/* Expenses */}
-            <motion.div whileHover={{ y: -4 }} transition={{ duration: 0.2 }}>
+            <motion.div 
+              whileHover={{ y: -4 }} 
+              transition={{ duration: 0.2 }}
+              onClick={() => handleKpiClick('Total Expenses', summary?.totalExpenses || 0)}
+              className="cursor-pointer"
+            >
               <Card className="bg-white dark:bg-slate-900/70 border-slate-200 dark:border-slate-800 border-t-4 border-t-rose-500 hover:border-rose-500/50 transition-all duration-300 shadow-sm hover:shadow-glow-rose rounded-2xl overflow-hidden relative group">
                 <div className="absolute top-0 right-0 w-32 h-32 bg-rose-500/5 rounded-full blur-2xl group-hover:bg-rose-500/10 transition-all"></div>
                 <CardHeader className="flex flex-row items-center justify-between pb-2">
@@ -148,42 +157,49 @@ export const DashboardPage = () => {
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-3xl font-extrabold text-rose-600 dark:text-rose-400">
+                  <div className="text-3xl font-extrabold text-slate-900 dark:text-white">
                     <AnimatedCounter value={summary?.totalExpenses || 0} formatter={(val) => formatCurrency(val)} />
                   </div>
-                  <div className="flex items-center text-xs text-slate-500 dark:text-slate-400 font-medium mt-2">
-                    <span>All-Time Expenses</span>
-                  </div>
+                  <p className="text-[11px] text-rose-600 dark:text-rose-400 mt-2 flex items-center gap-1 font-semibold">
+                    <Sparkles className="w-3 h-3" /> Click card for AI Analysis
+                  </p>
                 </CardContent>
               </Card>
             </motion.div>
 
             {/* Net Profit */}
-            <motion.div whileHover={{ y: -4 }} transition={{ duration: 0.2 }}>
+            <motion.div 
+              whileHover={{ y: -4 }} 
+              transition={{ duration: 0.2 }}
+              onClick={() => handleKpiClick('Net Profit', summary?.netProfit || 0)}
+              className="cursor-pointer"
+            >
               <Card className="bg-white dark:bg-slate-900/70 border-slate-200 dark:border-slate-800 border-t-4 border-t-indigo-500 hover:border-indigo-500/50 transition-all duration-300 shadow-sm hover:shadow-glow-indigo rounded-2xl overflow-hidden relative group">
                 <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/5 rounded-full blur-2xl group-hover:bg-indigo-500/10 transition-all"></div>
                 <CardHeader className="flex flex-row items-center justify-between pb-2">
                   <CardTitle className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Net Profit</CardTitle>
-                  <div className={`w-9 h-9 rounded-xl border flex items-center justify-center ${
-                    isPositiveProfit ? 'bg-indigo-500/10 border-indigo-500/20 text-indigo-600 dark:text-indigo-400' : 'bg-rose-500/10 border-rose-500/20 text-rose-600 dark:text-rose-400'
-                  }`}>
-                    {isPositiveProfit ? <TrendingUp className="w-5 h-5" /> : <TrendingDown className="w-5 h-5" />}
+                  <div className={`w-9 h-9 rounded-xl border flex items-center justify-center ${isPositiveProfit ? 'bg-indigo-500/10 border-indigo-500/20 text-indigo-600 dark:text-indigo-400' : 'bg-rose-500/10 border-rose-500/20 text-rose-600 dark:text-rose-400'}`}>
+                    <Wallet className="w-5 h-5" />
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <div className={`text-3xl font-extrabold ${isPositiveProfit ? 'text-indigo-600 dark:text-indigo-400' : 'text-rose-600 dark:text-rose-400'}`}>
+                  <div className={`text-3xl font-extrabold ${isPositiveProfit ? 'text-slate-900 dark:text-white' : 'text-rose-600 dark:text-rose-400'}`}>
                     <AnimatedCounter value={summary?.netProfit || 0} formatter={(val) => formatCurrency(val)} />
                   </div>
-                  <div className="flex items-center text-xs text-slate-500 dark:text-slate-400 font-medium mt-2">
-                    <Wallet className="w-3.5 h-3.5 mr-1 text-indigo-600 dark:text-indigo-400" />
-                    <span>All-Time Net Profit</span>
-                  </div>
+                  <p className="text-[11px] text-indigo-600 dark:text-indigo-400 mt-2 flex items-center gap-1 font-semibold">
+                    <Sparkles className="w-3 h-3" /> Click card for AI Analysis
+                  </p>
                 </CardContent>
               </Card>
             </motion.div>
 
             {/* Pending Payments */}
-            <motion.div whileHover={{ y: -4 }} transition={{ duration: 0.2 }}>
+            <motion.div 
+              whileHover={{ y: -4 }} 
+              transition={{ duration: 0.2 }}
+              onClick={() => handleKpiClick('Pending Payments', summary?.pendingPayments || 0)}
+              className="cursor-pointer"
+            >
               <Card className="bg-white dark:bg-slate-900/70 border-slate-200 dark:border-slate-800 border-t-4 border-t-amber-500 hover:border-amber-500/50 transition-all duration-300 shadow-sm hover:shadow-glow-amber rounded-2xl overflow-hidden relative group">
                 <div className="absolute top-0 right-0 w-32 h-32 bg-amber-500/5 rounded-full blur-2xl group-hover:bg-amber-500/10 transition-all"></div>
                 <CardHeader className="flex flex-row items-center justify-between pb-2">
@@ -193,12 +209,12 @@ export const DashboardPage = () => {
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-3xl font-extrabold text-amber-600 dark:text-amber-400">
+                  <div className="text-3xl font-extrabold text-slate-900 dark:text-white">
                     <AnimatedCounter value={summary?.pendingPayments || 0} formatter={(val) => formatCurrency(val)} />
                   </div>
-                  <div className="flex items-center text-xs text-amber-600/80 dark:text-amber-300/80 font-medium mt-2">
-                    <span>Awaiting Client Collection</span>
-                  </div>
+                  <p className="text-[11px] text-amber-600 dark:text-amber-400 mt-2 flex items-center gap-1 font-semibold">
+                    <Sparkles className="w-3 h-3" /> Click card for AI Analysis
+                  </p>
                 </CardContent>
               </Card>
             </motion.div>
@@ -206,193 +222,103 @@ export const DashboardPage = () => {
         )}
       </div>
 
-      {/* Charts & AI Insights Grid */}
-      <div className="grid gap-6 md:grid-cols-7">
-        {/* Cash Flow Chart */}
-        <Card className="md:col-span-4 bg-white dark:bg-slate-900/70 border-slate-200 dark:border-slate-800 rounded-2xl p-2 shadow-sm">
+      {/* AI Financial Copilot Executive Widget */}
+      <ExecutiveCopilotWidget />
+
+      {/* Cash Flow Dynamics & Top Clients Grid */}
+      <div className="grid gap-6 md:grid-cols-3">
+        {/* Recharts Cash Flow */}
+        <Card className="md:col-span-2 bg-white dark:bg-slate-900/70 border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm overflow-hidden">
           <CardHeader>
-            <div className="flex items-center justify-between">
-              <div>
-                <CardTitle className="text-lg font-bold text-slate-900 dark:text-white">Cash Flow Dynamics</CardTitle>
-                <CardDescription className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                  Revenue vs Expense comparison over 6 months
-                </CardDescription>
-              </div>
-            </div>
+            <CardTitle className="text-lg font-bold text-slate-900 dark:text-white">Cash Flow Dynamics</CardTitle>
+            <CardDescription className="text-xs text-slate-500 dark:text-slate-400">Monthly revenue collection against expense totals</CardDescription>
           </CardHeader>
-          <CardContent className="pt-4">
+          <CardContent className="pt-2">
             {loading ? (
-              <Skeleton className="h-[320px] w-full rounded-xl" />
+              <Skeleton className="h-72 w-full rounded-xl" />
             ) : (
-              (() => {
-                const maxDataValue = chartData.length > 0 
-                  ? Math.max(...chartData.flatMap(d => [d.revenue, d.expense]))
-                  : 100000;
-                const maxFormattedString = formatCurrency(maxDataValue);
-                const yAxisWidth = Math.max(85, maxFormattedString.length * 8 + 20);
-                
-                return (
-                  <div className="h-[320px] w-full">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <AreaChart data={chartData} margin={{ top: 10, right: 20, left: 0, bottom: 0 }}>
-                        <defs>
-                          <linearGradient id="colorRev" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="5%" stopColor="#10b981" stopOpacity={0.4}/>
-                            <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
-                          </linearGradient>
-                          <linearGradient id="colorExp" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="5%" stopColor="#f43f5e" stopOpacity={0.4}/>
-                            <stop offset="95%" stopColor="#f43f5e" stopOpacity={0}/>
-                          </linearGradient>
-                        </defs>
-                        <CartesianGrid strokeDasharray="3 3" stroke="#cbd5e1" className="dark:stroke-[#334155]" vertical={false} />
-                        <XAxis dataKey="month" stroke="#64748b" fontSize={11} tickLine={false} />
-                        <YAxis width={yAxisWidth} stroke="#64748b" fontSize={11} tickLine={false} tickFormatter={(val) => formatCurrency(val)} />
-                        <Tooltip
-                          contentStyle={{
-                            backgroundColor: '#0f172a',
-                            borderColor: '#334155',
-                            borderRadius: '0.75rem',
-                            color: '#f8fafc',
-                            boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.4)'
-                          }}
-                          formatter={(val: any, name: any) => [
-                            formatCurrency(Number(val)),
-                            name === 'revenue' || name === 'Revenue' ? 'Revenue' : 'Expense'
-                          ]}
-                        />
-                        <Legend verticalAlign="top" align="right" height={36} iconType="circle" />
-                        <Area type="monotone" dataKey="revenue" name="Revenue" stroke="#10b981" strokeWidth={3} fillOpacity={1} fill="url(#colorRev)" dot={{ r: 4, fill: '#10b981' }} activeDot={{ r: 6 }} />
-                        <Area type="monotone" dataKey="expense" name="Expense" stroke="#f43f5e" strokeWidth={3} fillOpacity={1} fill="url(#colorExp)" dot={{ r: 4, fill: '#f43f5e' }} activeDot={{ r: 6 }} />
-                      </AreaChart>
-                    </ResponsiveContainer>
-                  </div>
-                );
-              })()
+              <div className="h-72 w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart data={chartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+                    <defs>
+                      <linearGradient id="colorRev" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#10b981" stopOpacity={0.4}/>
+                        <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
+                      </linearGradient>
+                      <linearGradient id="colorExp" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#f43f5e" stopOpacity={0.4}/>
+                        <stop offset="95%" stopColor="#f43f5e" stopOpacity={0}/>
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#cbd5e1" className="dark:stroke-[#334155]" vertical={false} />
+                    <XAxis dataKey="month" stroke="#64748b" fontSize={11} tickLine={false} />
+                    <YAxis width={80} stroke="#64748b" fontSize={11} tickLine={false} tickFormatter={(val) => formatCurrency(val)} />
+                    <Tooltip
+                      contentStyle={{
+                        backgroundColor: '#0f172a',
+                        borderColor: '#334155',
+                        borderRadius: '0.75rem',
+                        color: '#f8fafc',
+                        boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.4)'
+                      }}
+                      formatter={(val: any, name: any) => [
+                        formatCurrency(Number(val)),
+                        name === 'revenue' || name === 'Revenue' ? 'Revenue' : 'Expense'
+                      ]}
+                    />
+                    <Legend verticalAlign="top" align="right" height={36} iconType="circle" />
+                    <Area type="monotone" dataKey="revenue" name="Revenue" stroke="#10b981" strokeWidth={2.5} fillOpacity={1} fill="url(#colorRev)" />
+                    <Area type="monotone" dataKey="expense" name="Expense" stroke="#f43f5e" strokeWidth={2.5} fillOpacity={1} fill="url(#colorExp)" />
+                  </AreaChart>
+                </ResponsiveContainer>
+              </div>
             )}
           </CardContent>
         </Card>
 
-        {/* AI Financial Insights */}
-        <Card className="md:col-span-3 bg-white dark:bg-slate-900/70 border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm">
-          <CardHeader className="flex flex-row items-center justify-between pb-2 border-b border-slate-100 dark:border-slate-800">
+        {/* Top Clients Ranking */}
+        <Card className="bg-white dark:bg-slate-900/70 border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm">
+          <CardHeader className="flex flex-row items-center justify-between pb-3">
             <div>
-              <CardTitle className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                <Sparkles className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
-                Gemini Financial Advisory
-              </CardTitle>
-              <CardDescription className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                AI-driven analysis of cash flow & margins
-              </CardDescription>
+              <CardTitle className="text-lg font-bold text-slate-900 dark:text-white">Top Clients</CardTitle>
+              <CardDescription className="text-xs text-slate-500 dark:text-slate-400">By total billed invoice revenue</CardDescription>
             </div>
-            <Button 
-              variant="ghost" 
-              size="icon"
-              onClick={generateInsights}
-              disabled={insightsLoading}
-              className="text-indigo-600 dark:text-indigo-300 hover:text-slate-900 dark:hover:text-white hover:bg-indigo-500/20 rounded-xl"
-              title="Refresh AI Insights"
-            >
-              <RefreshCw className={`w-4 h-4 ${insightsLoading ? 'animate-spin' : ''}`} />
-            </Button>
+            <Users className="w-5 h-5 text-indigo-500" />
           </CardHeader>
-
-          <CardContent className="pt-4">
-            {insightsLoading ? (
-              <div className="space-y-3 py-4">
-                <Skeleton className="h-4 w-3/4" />
-                <Skeleton className="h-4 w-full" />
-                <Skeleton className="h-4 w-5/6" />
-              </div>
-            ) : insights ? (
-              <div className="space-y-3 text-xs leading-relaxed text-slate-800 dark:text-slate-200">
-                {insights.split('\n').filter(l => l.trim().startsWith('-') || l.trim().startsWith('*')).map((line, i) => (
-                  <div key={i} className="flex items-start gap-2.5 p-2.5 rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-indigo-500/20">
-                    <span className="w-1.5 h-1.5 rounded-full bg-indigo-500 dark:bg-indigo-400 mt-1.5 shrink-0"></span>
-                    <p className="flex-1 text-slate-700 dark:text-slate-300">{line.replace(/^[-*]\s*/, '')}</p>
-                  </div>
-                ))}
-                {!insights.includes('-') && !insights.includes('*') && (
-                  <p className="p-3 rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-indigo-500/20 text-slate-700 dark:text-slate-300 leading-relaxed">
-                    {insights}
-                  </p>
-                )}
-              </div>
+          <CardContent className="space-y-4">
+            {loading ? (
+              Array.from({ length: 4 }).map((_, i) => (
+                <div key={i} className="flex items-center justify-between">
+                  <Skeleton className="h-4 w-32" />
+                  <Skeleton className="h-4 w-20" />
+                </div>
+              ))
+            ) : topClients.length === 0 ? (
+              <p className="text-xs text-slate-500 text-center py-6">No client invoice activity recorded yet.</p>
             ) : (
-              <div className="text-center py-10">
-                <Sparkles className="w-10 h-10 text-indigo-500/50 dark:text-indigo-400/50 mx-auto mb-3" />
-                <p className="text-xs text-slate-500 dark:text-slate-400 max-w-xs mx-auto mb-4">
-                  Tap below to analyze your income, expense ratios, and cash flow using Gemini AI.
-                </p>
-                <Button 
-                  onClick={generateInsights}
-                  className="bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs px-4 h-9 rounded-xl shadow-glow-indigo transition-all transform active:scale-95"
-                >
-                  Generate Financial Insights
-                </Button>
-              </div>
+              topClients.map((client, idx) => (
+                <div key={client.clientId} className="flex items-center justify-between p-2.5 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
+                  <div className="flex items-center space-x-3">
+                    <div className="w-7 h-7 rounded-lg bg-indigo-500/10 border border-indigo-500/20 text-indigo-600 dark:text-indigo-400 text-xs font-bold flex items-center justify-center">
+                      #{idx + 1}
+                    </div>
+                    <div>
+                      <p className="text-xs font-bold text-slate-900 dark:text-slate-100">{client.clientName}</p>
+                      <p className="text-[10px] text-slate-500 dark:text-slate-400">Top Revenue Contributor</p>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-xs font-extrabold text-emerald-600 dark:text-emerald-400">{formatCurrency(client.totalRevenue)}</p>
+                    <Link to={`/clients/${client.clientId}`} className="text-[10px] text-indigo-600 dark:text-indigo-400 hover:underline flex items-center justify-end gap-0.5">
+                      View <ArrowUpRight className="w-2.5 h-2.5" />
+                    </Link>
+                  </div>
+                </div>
+              ))
             )}
           </CardContent>
         </Card>
       </div>
-
-      {/* Top Clients Table */}
-      <Card className="bg-white dark:bg-slate-900/70 border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden shadow-sm">
-        <CardHeader className="flex flex-row items-center justify-between">
-          <div>
-            <CardTitle className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
-              <Users className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
-              Top Clients by Revenue
-            </CardTitle>
-            <CardDescription className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-              Your highest-value customer accounts
-            </CardDescription>
-          </div>
-          <Link to="/clients">
-            <Button variant="ghost" size="sm" className="text-xs text-indigo-600 dark:text-indigo-400 hover:text-indigo-500 flex items-center gap-1">
-              View All <ArrowUpRight className="w-3.5 h-3.5" />
-            </Button>
-          </Link>
-        </CardHeader>
-
-        <CardContent>
-          {loading ? (
-            <div className="grid gap-3 md:grid-cols-2">
-              <Skeleton className="h-16 w-full rounded-xl" />
-              <Skeleton className="h-16 w-full rounded-xl" />
-            </div>
-          ) : topClients.length === 0 ? (
-            <div className="text-center py-8 text-xs text-slate-500">
-              No revenue data recorded yet.
-            </div>
-          ) : (
-            <div className="grid gap-3 md:grid-cols-2">
-              {topClients.map((client, idx) => (
-                <div 
-                  key={client.clientId}
-                  className="flex items-center justify-between p-3.5 rounded-xl bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700/40 hover:bg-slate-100 dark:hover:bg-slate-800/80 transition-all"
-                >
-                  <div className="flex items-center space-x-3.5">
-                    <div className="w-9 h-9 rounded-xl bg-indigo-500/20 border border-indigo-500/40 flex items-center justify-center text-indigo-600 dark:text-indigo-300 font-bold text-xs">
-                      #{idx + 1}
-                    </div>
-                    <div>
-                      <p className="font-semibold text-sm text-slate-800 dark:text-slate-200">{client.clientName}</p>
-                      <p className="text-[10px] text-slate-500 dark:text-slate-400">Account ID: #{client.clientId}</p>
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <p className="font-extrabold text-sm text-emerald-600 dark:text-emerald-400">
-                      {formatCurrency(client.totalRevenue)}
-                    </p>
-                    <p className="text-[10px] text-slate-500 dark:text-slate-400">Total Billed</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
     </motion.div>
   );
 };

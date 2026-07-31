@@ -1,18 +1,41 @@
 import api from './api';
 import type { InvoiceItem } from '../types/invoice.types';
 
+export interface AiExecutiveSummary {
+  financialScore: number;
+  healthStatus: string;
+  topInsight: string;
+  biggestRisk: string;
+  biggestOpportunity: string;
+  suggestedAction: string;
+}
+
+export interface AiHealthAnalysis {
+  score: number;
+  status: string;
+  strengths: string[];
+  risks: string[];
+  recommendations: string[];
+}
+
+export interface AiCashFlowPrediction {
+  nextMonthRevenue: number;
+  nextMonthExpenses: number;
+  expectedProfit: number;
+  confidenceLevel: number;
+  reasoning: string;
+}
+
 export const aiService = {
   suggestItems: async (prompt: string): Promise<InvoiceItem[]> => {
     const response = await api.post('/ai/suggest-items', { prompt });
-    // The backend returns a JSON string, which Axios might parse automatically,
-    // but just in case it's a string, we parse it.
     if (typeof response.data === 'string') {
-        try {
-            return JSON.parse(response.data);
-        } catch (e) {
-            console.error("Failed to parse AI response:", response.data);
-            return [];
-        }
+      try {
+        return JSON.parse(response.data);
+      } catch (e) {
+        console.error("Failed to parse AI response:", response.data);
+        return [];
+      }
     }
     return response.data;
   },
@@ -24,6 +47,26 @@ export const aiService = {
 
   getInvoiceSummary: async (invoiceId: number): Promise<string> => {
     const response = await api.get<{ text: string }>(`/ai/invoice-summary/${invoiceId}`);
+    return response.data.text;
+  },
+
+  getExecutiveSummary: async (): Promise<AiExecutiveSummary> => {
+    const response = await api.get<AiExecutiveSummary>('/ai/executive-summary');
+    return response.data;
+  },
+
+  getFinancialHealth: async (): Promise<AiHealthAnalysis> => {
+    const response = await api.get<AiHealthAnalysis>('/ai/health');
+    return response.data;
+  },
+
+  getCashFlowPrediction: async (): Promise<AiCashFlowPrediction> => {
+    const response = await api.get<AiCashFlowPrediction>('/ai/cash-flow-prediction');
+    return response.data;
+  },
+
+  explainKpi: async (kpiName: string, currentValue: number): Promise<string> => {
+    const response = await api.post<{ text: string }>('/ai/explain-kpi', { kpiName, currentValue });
     return response.data.text;
   }
 };
