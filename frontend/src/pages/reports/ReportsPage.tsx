@@ -1,10 +1,14 @@
 import { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { motion } from 'framer-motion';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Skeleton } from '@/components/ui/skeleton';
+import { AnimatedCounter } from '../../components/shared/AnimatedCounter';
+import { EmptyState } from '../../components/shared/EmptyState';
 import { reportService } from '../../services/reports.service';
 import type { ReportSummaryResponse } from '../../services/reports.service';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import { Download, FileText, FileSpreadsheet } from 'lucide-react';
+import { Download, FileText, FileSpreadsheet, PieChart, TrendingUp, TrendingDown, DollarSign } from 'lucide-react';
 import { useCompany } from '../../context/CompanyContext';
 import {
   DropdownMenu,
@@ -50,27 +54,36 @@ export const ReportsPage = () => {
     }
   };
 
+  const isPositive = (report?.netProfit || 0) >= 0;
+
   return (
-    <div className="space-y-6">
+    <motion.div
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.35 }}
+      className="space-y-6 max-w-7xl mx-auto"
+    >
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Financial Reports</h1>
-          <p className="text-muted-foreground mt-1">Analyze your income and expenses.</p>
+          <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight bg-gradient-to-r from-slate-900 via-slate-800 to-indigo-600 dark:from-white dark:via-slate-100 dark:to-indigo-300 bg-clip-text text-transparent">
+            Financial Reports
+          </h1>
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Comprehensive breakdown of business income, expenses, and net profit margins.</p>
         </div>
         <div className="flex items-center gap-2">
           <DropdownMenu>
-            <DropdownMenuTrigger className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground hover:bg-primary/90 h-10 px-4 py-2">
-              <Download className="w-4 h-4 mr-2" /> Export
+            <DropdownMenuTrigger className="inline-flex items-center justify-center whitespace-nowrap bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white font-semibold text-xs h-9 px-4 rounded-xl shadow-glow-indigo gap-1.5 transition-all transform active:scale-95 cursor-pointer outline-none">
+              <Download className="w-4 h-4" /> Export Report
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
+            <DropdownMenuContent align="end" className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-xs">
               <DropdownMenuItem onClick={() => handleExport('pdf')}>
-                <FileText className="w-4 h-4 mr-2" /> Export as PDF
+                <FileText className="w-4 h-4 mr-2 text-rose-500" /> Export as PDF
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => handleExport('excel')}>
-                <FileSpreadsheet className="w-4 h-4 mr-2" /> Export as Excel
+                <FileSpreadsheet className="w-4 h-4 mr-2 text-emerald-500" /> Export as Excel
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => handleExport('csv')}>
-                <FileText className="w-4 h-4 mr-2" /> Export as CSV
+                <FileText className="w-4 h-4 mr-2 text-indigo-500" /> Export as CSV
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
@@ -78,116 +91,147 @@ export const ReportsPage = () => {
       </div>
 
       {/* Controls */}
-      <Card>
-        <CardContent className="p-4 flex flex-wrap gap-4 items-center">
-          <div className="flex gap-2 p-1 bg-muted rounded-md">
+      <Card className="bg-white dark:bg-slate-900/70 border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm">
+        <CardContent className="p-4 flex flex-wrap gap-4 items-center justify-between">
+          <div className="flex gap-1.5 p-1 bg-slate-100 dark:bg-slate-800/60 rounded-xl border border-slate-200 dark:border-slate-700/60">
             <Button 
               variant={viewType === 'monthly' ? 'default' : 'ghost'} 
               size="sm"
               onClick={() => setViewType('monthly')}
+              className={`text-xs h-8 rounded-lg ${viewType === 'monthly' ? 'bg-indigo-600 text-white shadow-sm' : ''}`}
             >
-              Monthly
+              Monthly View
             </Button>
             <Button 
               variant={viewType === 'yearly' ? 'default' : 'ghost'} 
               size="sm"
               onClick={() => setViewType('yearly')}
+              className={`text-xs h-8 rounded-lg ${viewType === 'yearly' ? 'bg-indigo-600 text-white shadow-sm' : ''}`}
             >
-              Yearly
+              Yearly View
             </Button>
           </div>
           
-          <select 
-            value={year}
-            onChange={(e) => setYear(Number(e.target.value))}
-            className="flex h-9 w-full sm:w-32 items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm"
-          >
-            {[2024, 2025, 2026, 2027].map(y => (
-              <option key={y} value={y}>{y}</option>
-            ))}
-          </select>
-
-          {viewType === 'monthly' && (
+          <div className="flex gap-2 w-full sm:w-auto">
             <select 
-              value={month}
-              onChange={(e) => setMonth(Number(e.target.value))}
-              className="flex h-9 w-full sm:w-32 items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm"
+              value={year}
+              onChange={(e) => setYear(Number(e.target.value))}
+              className="flex h-9 w-full sm:w-32 items-center justify-between rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-3 py-2 text-xs font-semibold text-slate-800 dark:text-slate-200"
             >
-              {Array.from({length: 12}).map((_, i) => (
-                <option key={i+1} value={i+1}>
-                  {new Date(2000, i, 1).toLocaleString('default', { month: 'long' })}
-                </option>
+              {[2024, 2025, 2026, 2027].map(y => (
+                <option key={y} value={y}>{y}</option>
               ))}
             </select>
-          )}
+
+            {viewType === 'monthly' && (
+              <select 
+                value={month}
+                onChange={(e) => setMonth(Number(e.target.value))}
+                className="flex h-9 w-full sm:w-36 items-center justify-between rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-3 py-2 text-xs font-semibold text-slate-800 dark:text-slate-200"
+              >
+                {Array.from({length: 12}).map((_, i) => (
+                  <option key={i+1} value={i+1}>
+                    {new Date(2000, i, 1).toLocaleString('default', { month: 'long' })}
+                  </option>
+                ))}
+              </select>
+            )}
+          </div>
         </CardContent>
       </Card>
 
       {loading ? (
-        <div className="text-center py-10">Loading report data...</div>
+        <div className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <Skeleton className="h-28 rounded-2xl" />
+            <Skeleton className="h-28 rounded-2xl" />
+            <Skeleton className="h-28 rounded-2xl" />
+          </div>
+          <Skeleton className="h-80 rounded-2xl" />
+        </div>
       ) : report ? (
         <div className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground">Total Revenue</CardTitle>
+            <Card className="bg-white dark:bg-slate-900/70 border-slate-200 dark:border-slate-800 border-t-4 border-t-emerald-500 rounded-2xl shadow-sm">
+              <CardHeader className="pb-2 flex flex-row items-center justify-between">
+                <CardTitle className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Total Revenue</CardTitle>
+                <DollarSign className="w-4 h-4 text-emerald-500" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold text-green-600">{formatCurrency(report.totalRevenue)}</div>
+                <div className="text-2xl font-extrabold text-emerald-600 dark:text-emerald-400">
+                  <AnimatedCounter value={report.totalRevenue} formatter={(val) => formatCurrency(val)} />
+                </div>
               </CardContent>
             </Card>
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground">Total Expenses</CardTitle>
+
+            <Card className="bg-white dark:bg-slate-900/70 border-slate-200 dark:border-slate-800 border-t-4 border-t-rose-500 rounded-2xl shadow-sm">
+              <CardHeader className="pb-2 flex flex-row items-center justify-between">
+                <CardTitle className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Total Expenses</CardTitle>
+                <TrendingDown className="w-4 h-4 text-rose-500" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold text-red-600">{formatCurrency(report.totalExpenses)}</div>
+                <div className="text-2xl font-extrabold text-rose-600 dark:text-rose-400">
+                  <AnimatedCounter value={report.totalExpenses} formatter={(val) => formatCurrency(val)} />
+                </div>
               </CardContent>
             </Card>
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground">Net Profit</CardTitle>
+
+            <Card className="bg-white dark:bg-slate-900/70 border-slate-200 dark:border-slate-800 border-t-4 border-t-indigo-500 rounded-2xl shadow-sm">
+              <CardHeader className="pb-2 flex flex-row items-center justify-between">
+                <CardTitle className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Net Profit</CardTitle>
+                {isPositive ? <TrendingUp className="w-4 h-4 text-indigo-500" /> : <TrendingDown className="w-4 h-4 text-rose-500" />}
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{formatCurrency(report.netProfit)}</div>
+                <div className={`text-2xl font-extrabold ${isPositive ? 'text-indigo-600 dark:text-indigo-400' : 'text-rose-600 dark:text-rose-400'}`}>
+                  <AnimatedCounter value={report.netProfit} formatter={(val) => formatCurrency(val)} />
+                </div>
               </CardContent>
             </Card>
           </div>
 
-          <Card>
+          <Card className="bg-white dark:bg-slate-900/70 border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm">
             <CardHeader>
-              <CardTitle>Income vs Expenses</CardTitle>
+              <CardTitle className="text-lg font-bold text-slate-900 dark:text-white">Income vs Expenses Breakdown</CardTitle>
+              <CardDescription className="text-xs text-slate-500 dark:text-slate-400">Comparing total billed revenue against logged expense items over {report.period}</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="h-80 w-full">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={report.breakdown}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#334155" vertical={false} />
-                    <XAxis dataKey="month" stroke="#94a3b8" />
-                    <YAxis width={85} stroke="#94a3b8" tickFormatter={(value) => formatCurrency(value)} />
-                    <Tooltip
-                      contentStyle={{
-                        backgroundColor: '#1e293b',
-                        borderColor: '#334155',
-                        borderRadius: '0.75rem',
-                        color: '#f8fafc',
-                        boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.5)'
-                      }}
-                      formatter={(val: any, name: any) => [
-                        formatCurrency(Number(val)),
-                        name === 'revenue' || name === 'Revenue' ? 'Revenue' : 'Expense'
-                      ]}
-                    />
-                    <Legend />
-                    <Bar dataKey="revenue" name="Revenue" fill="#10b981" radius={[6, 6, 0, 0]} minPointSize={4} />
-                    <Bar dataKey="expense" name="Expense" fill="#f43f5e" radius={[6, 6, 0, 0]} minPointSize={4} />
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
+              {report.breakdown.length === 0 ? (
+                <EmptyState
+                  icon={PieChart}
+                  title="No breakdown data available"
+                  description="No recorded revenue or expense activity found for the selected period."
+                />
+              ) : (
+                <div className="h-80 w-full">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={report.breakdown}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#cbd5e1" className="dark:stroke-[#334155]" vertical={false} />
+                      <XAxis dataKey="month" stroke="#64748b" fontSize={11} tickLine={false} />
+                      <YAxis width={85} stroke="#64748b" fontSize={11} tickLine={false} tickFormatter={(value) => formatCurrency(value)} />
+                      <Tooltip
+                        contentStyle={{
+                          backgroundColor: '#0f172a',
+                          borderColor: '#334155',
+                          borderRadius: '0.75rem',
+                          color: '#f8fafc',
+                          boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.4)'
+                        }}
+                        formatter={(val: any, name: any) => [
+                          formatCurrency(Number(val)),
+                          name === 'revenue' || name === 'Revenue' ? 'Revenue' : 'Expense'
+                        ]}
+                      />
+                      <Legend verticalAlign="top" align="right" height={36} iconType="circle" />
+                      <Bar dataKey="revenue" name="Revenue" fill="#10b981" radius={[6, 6, 0, 0]} minPointSize={4} />
+                      <Bar dataKey="expense" name="Expense" fill="#f43f5e" radius={[6, 6, 0, 0]} minPointSize={4} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              )}
             </CardContent>
           </Card>
         </div>
       ) : null}
-    </div>
+    </motion.div>
   );
 };

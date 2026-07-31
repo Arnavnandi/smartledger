@@ -1,14 +1,18 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { Skeleton } from '@/components/ui/skeleton';
+import { EmptyState } from '../../components/shared/EmptyState';
 import { invoiceService } from '../../services/invoice.service';
 import type { Invoice, PaginatedResponse } from '../../types/invoice.types';
 import { useCompany } from '../../context/CompanyContext';
+import { FileText, Plus, Filter, MoreHorizontal } from 'lucide-react';
 
 export const InvoicesListPage = () => {
   const { formatCurrency } = useCompany();
@@ -73,9 +77,9 @@ export const InvoicesListPage = () => {
 
   const getStatusBadge = (status: string) => {
     switch (status) {
-      case 'PAID': return <Badge className="bg-green-100 text-green-800 hover:bg-green-100">Paid</Badge>;
-      case 'PENDING': return <Badge className="bg-blue-100 text-blue-800 hover:bg-blue-100">Pending</Badge>;
-      case 'OVERDUE': return <Badge className="bg-red-100 text-red-800 hover:bg-red-100">Overdue</Badge>;
+      case 'PAID': return <Badge className="bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30">Paid</Badge>;
+      case 'PENDING': return <Badge className="bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30">Pending</Badge>;
+      case 'OVERDUE': return <Badge className="bg-rose-500/15 text-rose-600 dark:text-rose-400 border border-rose-500/30">Overdue</Badge>;
       case 'DRAFT': return <Badge variant="secondary">Draft</Badge>;
       case 'CANCELLED': return <Badge variant="outline" className="text-muted-foreground">Cancelled</Badge>;
       default: return <Badge>{status}</Badge>;
@@ -83,109 +87,136 @@ export const InvoicesListPage = () => {
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
+    <motion.div
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.35 }}
+      className="space-y-6 max-w-7xl mx-auto"
+    >
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Invoices</h1>
-          <p className="text-muted-foreground mt-1">Manage your billing and invoices.</p>
+          <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight bg-gradient-to-r from-slate-900 via-slate-800 to-indigo-600 dark:from-white dark:via-slate-100 dark:to-indigo-300 bg-clip-text text-transparent">
+            Invoices
+          </h1>
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Manage billing, client payments, and track status.</p>
         </div>
         <Link to="/invoices/new">
-          <Button>Create Invoice</Button>
+          <Button className="bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white font-semibold text-xs h-9 px-4 rounded-xl shadow-glow-indigo flex items-center gap-1.5 transition-all transform active:scale-95">
+            <Plus className="w-4 h-4" /> Create Invoice
+          </Button>
         </Link>
       </div>
 
       <div className="flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center">
         <Tabs value={statusFilter} onValueChange={(val) => { setStatusFilter(val); setPage(0); }}>
-          <TabsList>
-            <TabsTrigger value="ALL">All</TabsTrigger>
-            <TabsTrigger value="DRAFT">Draft</TabsTrigger>
-            <TabsTrigger value="PENDING">Pending</TabsTrigger>
-            <TabsTrigger value="PAID">Paid</TabsTrigger>
-            <TabsTrigger value="OVERDUE">Overdue</TabsTrigger>
+          <TabsList className="bg-slate-200/60 dark:bg-slate-800/60 p-1 rounded-xl">
+            <TabsTrigger value="ALL" className="text-xs rounded-lg">All</TabsTrigger>
+            <TabsTrigger value="DRAFT" className="text-xs rounded-lg">Draft</TabsTrigger>
+            <TabsTrigger value="PENDING" className="text-xs rounded-lg">Pending</TabsTrigger>
+            <TabsTrigger value="PAID" className="text-xs rounded-lg">Paid</TabsTrigger>
+            <TabsTrigger value="OVERDUE" className="text-xs rounded-lg">Overdue</TabsTrigger>
           </TabsList>
         </Tabs>
         <div className="flex gap-2 w-full sm:w-auto">
           <Input
-            placeholder="Search by invoice number or client..."
+            placeholder="Search invoice # or client..."
             value={search}
             onChange={(e) => { setSearch(e.target.value); setPage(0); }}
-            className="flex-1 sm:w-64"
+            className="flex-1 sm:w-64 h-9 text-xs rounded-xl bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800"
           />
-          <Button variant="outline" onClick={() => setShowAdvanced(!showAdvanced)}>
-            Filters
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={() => setShowAdvanced(!showAdvanced)}
+            className="h-9 text-xs rounded-xl flex items-center gap-1.5 border-slate-200 dark:border-slate-800"
+          >
+            <Filter className="w-3.5 h-3.5" /> Filters
           </Button>
         </div>
       </div>
 
       {showAdvanced && (
-        <div className="p-4 border rounded-md bg-muted/20 grid grid-cols-1 sm:grid-cols-4 gap-4">
+        <div className="p-4 border rounded-2xl bg-slate-50 dark:bg-slate-900/60 border-slate-200 dark:border-slate-800 grid grid-cols-1 sm:grid-cols-4 gap-4">
           <div className="space-y-1">
-            <label className="text-xs font-medium">Start Date</label>
-            <Input type="date" value={advancedFilters.startDate} onChange={e => setAdvancedFilters({...advancedFilters, startDate: e.target.value})} />
+            <label className="text-xs font-medium text-slate-600 dark:text-slate-400">Start Date</label>
+            <Input type="date" value={advancedFilters.startDate} onChange={e => setAdvancedFilters({...advancedFilters, startDate: e.target.value})} className="h-8 text-xs rounded-lg" />
           </div>
           <div className="space-y-1">
-            <label className="text-xs font-medium">End Date</label>
-            <Input type="date" value={advancedFilters.endDate} onChange={e => setAdvancedFilters({...advancedFilters, endDate: e.target.value})} />
+            <label className="text-xs font-medium text-slate-600 dark:text-slate-400">End Date</label>
+            <Input type="date" value={advancedFilters.endDate} onChange={e => setAdvancedFilters({...advancedFilters, endDate: e.target.value})} className="h-8 text-xs rounded-lg" />
           </div>
           <div className="space-y-1">
-            <label className="text-xs font-medium">Min Amount</label>
-            <Input type="number" placeholder="0.00" value={advancedFilters.minAmount} onChange={e => setAdvancedFilters({...advancedFilters, minAmount: e.target.value})} />
+            <label className="text-xs font-medium text-slate-600 dark:text-slate-400">Min Amount</label>
+            <Input type="number" placeholder="0.00" value={advancedFilters.minAmount} onChange={e => setAdvancedFilters({...advancedFilters, minAmount: e.target.value})} className="h-8 text-xs rounded-lg" />
           </div>
           <div className="space-y-1">
-            <label className="text-xs font-medium">Max Amount</label>
-            <Input type="number" placeholder="1000.00" value={advancedFilters.maxAmount} onChange={e => setAdvancedFilters({...advancedFilters, maxAmount: e.target.value})} />
+            <label className="text-xs font-medium text-slate-600 dark:text-slate-400">Max Amount</label>
+            <Input type="number" placeholder="1000.00" value={advancedFilters.maxAmount} onChange={e => setAdvancedFilters({...advancedFilters, maxAmount: e.target.value})} className="h-8 text-xs rounded-lg" />
           </div>
         </div>
       )}
 
-      <div className="border rounded-md bg-background">
+      <div className="border rounded-2xl bg-white dark:bg-slate-900/70 border-slate-200 dark:border-slate-800 overflow-hidden shadow-sm">
         <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Invoice Number</TableHead>
-              <TableHead>Client</TableHead>
-              <TableHead>Issue Date</TableHead>
-              <TableHead>Due Date</TableHead>
-              <TableHead>Amount</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead className="text-right">Actions</TableHead>
+          <TableHeader className="bg-slate-100/80 dark:bg-slate-800/50 sticky top-0 backdrop-blur z-10">
+            <TableRow className="border-b border-slate-200 dark:border-slate-800">
+              <TableHead className="font-semibold text-xs text-slate-600 dark:text-slate-300">Invoice #</TableHead>
+              <TableHead className="font-semibold text-xs text-slate-600 dark:text-slate-300">Client</TableHead>
+              <TableHead className="font-semibold text-xs text-slate-600 dark:text-slate-300">Issue Date</TableHead>
+              <TableHead className="font-semibold text-xs text-slate-600 dark:text-slate-300">Due Date</TableHead>
+              <TableHead className="font-semibold text-xs text-slate-600 dark:text-slate-300">Amount</TableHead>
+              <TableHead className="font-semibold text-xs text-slate-600 dark:text-slate-300">Status</TableHead>
+              <TableHead className="font-semibold text-xs text-slate-600 dark:text-slate-300 text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {loading ? (
-              <TableRow>
-                <TableCell colSpan={7} className="text-center py-10">Loading...</TableCell>
-              </TableRow>
+              Array.from({ length: 5 }).map((_, i) => (
+                <TableRow key={i}>
+                  <TableCell><Skeleton className="h-4 w-20" /></TableCell>
+                  <TableCell><Skeleton className="h-4 w-32" /></TableCell>
+                  <TableCell><Skeleton className="h-4 w-24" /></TableCell>
+                  <TableCell><Skeleton className="h-4 w-24" /></TableCell>
+                  <TableCell><Skeleton className="h-4 w-20" /></TableCell>
+                  <TableCell><Skeleton className="h-4 w-16" /></TableCell>
+                  <TableCell className="text-right"><Skeleton className="h-8 w-8 ml-auto rounded-lg" /></TableCell>
+                </TableRow>
+              ))
             ) : data?.content.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={7} className="text-center py-10">No invoices found.</TableCell>
+                <TableCell colSpan={7} className="p-0 border-none">
+                  <EmptyState
+                    icon={FileText}
+                    title="No invoices found"
+                    description={search ? `No invoice matches "${search}". Try resetting filters.` : 'You haven\'t created any invoices yet.'}
+                    actionLabel="Create Invoice"
+                    onAction={() => navigate('/invoices/new')}
+                  />
+                </TableCell>
               </TableRow>
             ) : (
               data?.content.map((invoice) => (
-                <TableRow key={invoice.id}>
-                  <TableCell className="font-medium">
-                    <Link to={`/invoices/${invoice.id}`} className="hover:underline text-primary">
+                <TableRow key={invoice.id} className="odd:bg-white even:bg-slate-50/50 dark:odd:bg-slate-900/40 dark:even:bg-slate-900/80 hover:bg-indigo-50/40 dark:hover:bg-indigo-950/20 transition-colors border-b border-slate-100 dark:border-slate-800/50">
+                  <TableCell className="font-medium text-xs">
+                    <Link to={`/invoices/${invoice.id}`} className="hover:underline text-indigo-600 dark:text-indigo-400 font-bold">
                       {invoice.invoiceNumber}
                     </Link>
                   </TableCell>
-                  <TableCell>
-                    <Link to={`/clients/${invoice.clientId}`} className="hover:underline">
+                  <TableCell className="text-xs">
+                    <Link to={`/clients/${invoice.clientId}`} className="hover:underline text-slate-800 dark:text-slate-200 font-medium">
                       {invoice.clientName}
                     </Link>
                   </TableCell>
-                  <TableCell>{new Date(invoice.issueDate).toLocaleDateString()}</TableCell>
-                  <TableCell>{new Date(invoice.dueDate).toLocaleDateString()}</TableCell>
-                  <TableCell className="font-medium">{formatCurrency(invoice.totalAmount)}</TableCell>
+                  <TableCell className="text-xs text-slate-500 dark:text-slate-400">{new Date(invoice.issueDate).toLocaleDateString()}</TableCell>
+                  <TableCell className="text-xs text-slate-500 dark:text-slate-400">{new Date(invoice.dueDate).toLocaleDateString()}</TableCell>
+                  <TableCell className="font-bold text-xs text-slate-900 dark:text-slate-100">{formatCurrency(invoice.totalAmount)}</TableCell>
                   <TableCell>{getStatusBadge(invoice.status)}</TableCell>
                   <TableCell className="text-right">
                     <DropdownMenu>
-                      <DropdownMenuTrigger className="h-8 w-8 p-0 inline-flex items-center justify-center rounded-md hover:bg-muted">
-                        <span className="sr-only">Open menu</span>
-                        <svg width="15" height="15" viewBox="0 0 15 15" fill="none" xmlns="http://www.w3.org/2000/svg" className="h-4 w-4">
-                          <path d="M3.625 7.5C3.625 8.12132 3.12132 8.625 2.5 8.625C1.87868 8.625 1.375 8.12132 1.375 7.5C1.375 6.87868 1.87868 6.375 2.5 6.375C3.12132 6.375 3.625 6.87868 3.625 7.5ZM8.625 7.5C8.625 8.12132 8.12132 8.625 7.5 8.625C6.87868 8.625 6.375 8.12132 6.375 7.5C6.375 6.87868 6.87868 6.375 7.5 6.375C8.12132 6.375 8.625 6.87868 8.625 7.5ZM13.625 7.5C13.625 8.12132 13.1213 8.625 12.5 8.625C11.8787 8.625 11.375 8.12132 11.375 7.5C11.375 6.87868 11.8787 6.375 12.5 6.375C13.1213 6.375 13.625 6.87868 13.625 7.5Z" fill="currentColor" fillRule="evenodd" clipRule="evenodd"></path>
-                        </svg>
+                      <DropdownMenuTrigger className="h-8 w-8 p-0 inline-flex items-center justify-center rounded-lg hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-500">
+                        <MoreHorizontal className="h-4 w-4" />
                       </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
+                      <DropdownMenuContent align="end" className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-xs">
                         <DropdownMenuItem onClick={() => navigate(`/invoices/${invoice.id}`)}>
                           View Details
                         </DropdownMenuItem>
@@ -195,7 +226,7 @@ export const InvoicesListPage = () => {
                           </DropdownMenuItem>
                         )}
                         {invoice.status === 'DRAFT' && (
-                          <DropdownMenuItem className="text-destructive" onClick={() => handleDelete(invoice.id)}>
+                          <DropdownMenuItem className="text-rose-600 dark:text-rose-400" onClick={() => handleDelete(invoice.id)}>
                             Delete
                           </DropdownMenuItem>
                         )}
@@ -210,20 +241,20 @@ export const InvoicesListPage = () => {
       </div>
       
       {data && data.totalPages > 1 && (
-        <div className="flex items-center justify-between">
-          <p className="text-sm text-muted-foreground">
-            Showing page {data.currentPage + 1} of {data.totalPages}
+        <div className="flex items-center justify-between pt-2">
+          <p className="text-xs text-slate-500 dark:text-slate-400">
+            Showing page <strong className="text-slate-800 dark:text-slate-200">{data.currentPage + 1}</strong> of <strong className="text-slate-800 dark:text-slate-200">{data.totalPages}</strong>
           </p>
           <div className="flex gap-2">
-            <Button variant="outline" size="sm" onClick={() => setPage(p => Math.max(0, p - 1))} disabled={data.currentPage === 0}>
+            <Button variant="outline" size="sm" onClick={() => setPage(p => Math.max(0, p - 1))} disabled={data.currentPage === 0} className="h-8 text-xs rounded-lg">
               Previous
             </Button>
-            <Button variant="outline" size="sm" onClick={() => setPage(p => Math.min(data.totalPages - 1, p + 1))} disabled={data.currentPage === data.totalPages - 1}>
+            <Button variant="outline" size="sm" onClick={() => setPage(p => Math.min(data.totalPages - 1, p + 1))} disabled={data.currentPage === data.totalPages - 1} className="h-8 text-xs rounded-lg">
               Next
             </Button>
           </div>
         </div>
       )}
-    </div>
+    </motion.div>
   );
 };

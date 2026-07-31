@@ -1,16 +1,21 @@
 import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { Skeleton } from '@/components/ui/skeleton';
+import { EmptyState } from '../../components/shared/EmptyState';
 import { clientService } from '../../services/client.service';
 import type { Client, PaginatedResponse } from '../../types/client.types';
 import { useCompany } from '../../context/CompanyContext';
+import { Users, Plus, Search, MoreHorizontal } from 'lucide-react';
 
 export const ClientsListPage = () => {
   const { formatCurrency } = useCompany();
+  const navigate = useNavigate();
   const [data, setData] = useState<PaginatedResponse<Client> | null>(null);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -30,7 +35,6 @@ export const ClientsListPage = () => {
   };
 
   useEffect(() => {
-    // Debounce search
     const timer = setTimeout(() => {
       fetchClients();
     }, 300);
@@ -48,85 +52,106 @@ export const ClientsListPage = () => {
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
+    <motion.div
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.35 }}
+      className="space-y-6 max-w-7xl mx-auto"
+    >
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Clients</h1>
-          <p className="text-muted-foreground mt-1">Manage your business clients and their balances.</p>
+          <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight bg-gradient-to-r from-slate-900 via-slate-800 to-indigo-600 dark:from-white dark:via-slate-100 dark:to-indigo-300 bg-clip-text text-transparent">
+            Clients Directory
+          </h1>
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Manage client records, billing contacts, and balance totals.</p>
         </div>
         <Link to="/clients/new">
-          <Button>Add Client</Button>
+          <Button className="bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white font-semibold text-xs h-9 px-4 rounded-xl shadow-glow-indigo flex items-center gap-1.5 transition-all transform active:scale-95">
+            <Plus className="w-4 h-4" /> Add Client
+          </Button>
         </Link>
       </div>
 
-      <div className="flex items-center space-x-2">
+      <div className="flex items-center space-x-2 max-w-sm relative">
+        <Search className="w-4 h-4 absolute left-3 text-slate-400" />
         <Input
           placeholder="Search by name or email..."
           value={search}
           onChange={(e) => {
             setSearch(e.target.value);
-            setPage(0); // Reset page on search
+            setPage(0);
           }}
-          className="max-w-sm"
+          className="pl-9 h-9 text-xs rounded-xl bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800"
         />
       </div>
 
-      <div className="border rounded-md bg-background">
+      <div className="border rounded-2xl bg-white dark:bg-slate-900/70 border-slate-200 dark:border-slate-800 overflow-hidden shadow-sm">
         <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Name</TableHead>
-              <TableHead>Email</TableHead>
-              <TableHead>Balance</TableHead>
-              <TableHead>Tags</TableHead>
-              <TableHead className="text-right">Actions</TableHead>
+          <TableHeader className="bg-slate-100/80 dark:bg-slate-800/50 sticky top-0 backdrop-blur z-10">
+            <TableRow className="border-b border-slate-200 dark:border-slate-800">
+              <TableHead className="font-semibold text-xs text-slate-600 dark:text-slate-300">Name</TableHead>
+              <TableHead className="font-semibold text-xs text-slate-600 dark:text-slate-300">Email</TableHead>
+              <TableHead className="font-semibold text-xs text-slate-600 dark:text-slate-300">Outstanding Balance</TableHead>
+              <TableHead className="font-semibold text-xs text-slate-600 dark:text-slate-300">Tags</TableHead>
+              <TableHead className="font-semibold text-xs text-slate-600 dark:text-slate-300 text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {loading ? (
-              <TableRow>
-                <TableCell colSpan={5} className="text-center py-10">Loading...</TableCell>
-              </TableRow>
+              Array.from({ length: 5 }).map((_, i) => (
+                <TableRow key={i}>
+                  <TableCell><Skeleton className="h-4 w-32" /></TableCell>
+                  <TableCell><Skeleton className="h-4 w-40" /></TableCell>
+                  <TableCell><Skeleton className="h-4 w-24" /></TableCell>
+                  <TableCell><Skeleton className="h-4 w-20" /></TableCell>
+                  <TableCell className="text-right"><Skeleton className="h-8 w-8 ml-auto rounded-lg" /></TableCell>
+                </TableRow>
+              ))
             ) : data?.content.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={5} className="text-center py-10">No clients found.</TableCell>
+                <TableCell colSpan={5} className="p-0 border-none">
+                  <EmptyState
+                    icon={Users}
+                    title="No clients found"
+                    description={search ? `No client matches "${search}".` : 'Get started by adding your first client account.'}
+                    actionLabel="Add Client"
+                    onAction={() => navigate('/clients/new')}
+                  />
+                </TableCell>
               </TableRow>
             ) : (
               data?.content.map((client) => (
-                <TableRow key={client.id}>
-                  <TableCell className="font-medium">
-                    <Link to={`/clients/${client.id}`} className="hover:underline text-primary">
+                <TableRow key={client.id} className="odd:bg-white even:bg-slate-50/50 dark:odd:bg-slate-900/40 dark:even:bg-slate-900/80 hover:bg-indigo-50/40 dark:hover:bg-indigo-950/20 transition-colors border-b border-slate-100 dark:border-slate-800/50">
+                  <TableCell className="font-medium text-xs">
+                    <Link to={`/clients/${client.id}`} className="hover:underline text-indigo-600 dark:text-indigo-400 font-bold">
                       {client.name}
                     </Link>
                   </TableCell>
-                  <TableCell>{client.email}</TableCell>
-                  <TableCell className={`font-medium ${client.outstandingBalance > 0 ? 'text-destructive' : ''}`}>
+                  <TableCell className="text-xs text-slate-600 dark:text-slate-400">{client.email}</TableCell>
+                  <TableCell className={`font-bold text-xs ${client.outstandingBalance > 0 ? 'text-amber-600 dark:text-amber-400' : 'text-slate-700 dark:text-slate-300'}`}>
                     {formatCurrency(client.outstandingBalance)}
                   </TableCell>
                   <TableCell>
                     <div className="flex gap-1 flex-wrap">
                       {client.tags?.slice(0, 2).map(tag => (
-                        <Badge key={tag} variant="secondary" className="text-xs">{tag}</Badge>
+                        <Badge key={tag} variant="secondary" className="text-[10px] bg-slate-100 dark:bg-slate-800">{tag}</Badge>
                       ))}
-                      {client.tags?.length > 2 && <Badge variant="outline">+{client.tags.length - 2}</Badge>}
+                      {client.tags?.length > 2 && <Badge variant="outline" className="text-[10px]">+{client.tags.length - 2}</Badge>}
                     </div>
                   </TableCell>
                   <TableCell className="text-right">
                     <DropdownMenu>
-                      <DropdownMenuTrigger className="h-8 w-8 p-0 inline-flex items-center justify-center rounded-md hover:bg-muted">
-                        <span className="sr-only">Open menu</span>
-                        <svg width="15" height="15" viewBox="0 0 15 15" fill="none" xmlns="http://www.w3.org/2000/svg" className="h-4 w-4">
-                          <path d="M3.625 7.5C3.625 8.12132 3.12132 8.625 2.5 8.625C1.87868 8.625 1.375 8.12132 1.375 7.5C1.375 6.87868 1.87868 6.375 2.5 6.375C3.12132 6.375 3.625 6.87868 3.625 7.5ZM8.625 7.5C8.625 8.12132 8.12132 8.625 7.5 8.625C6.87868 8.625 6.375 8.12132 6.375 7.5C6.375 6.87868 6.87868 6.375 7.5 6.375C8.12132 6.375 8.625 6.87868 8.625 7.5ZM13.625 7.5C13.625 8.12132 13.1213 8.625 12.5 8.625C11.8787 8.625 11.375 8.12132 11.375 7.5C11.375 6.87868 11.8787 6.375 12.5 6.375C13.1213 6.375 13.625 6.87868 13.625 7.5Z" fill="currentColor" fillRule="evenodd" clipRule="evenodd"></path>
-                        </svg>
+                      <DropdownMenuTrigger className="h-8 w-8 p-0 inline-flex items-center justify-center rounded-lg hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-500">
+                        <MoreHorizontal className="h-4 w-4" />
                       </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={() => window.location.href = `/clients/${client.id}`}>
+                      <DropdownMenuContent align="end" className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-xs">
+                        <DropdownMenuItem onClick={() => navigate(`/clients/${client.id}`)}>
                           View Details
                         </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => window.location.href = `/clients/${client.id}/edit`}>
+                        <DropdownMenuItem onClick={() => navigate(`/clients/${client.id}/edit`)}>
                           Edit Client
                         </DropdownMenuItem>
-                        <DropdownMenuItem className="text-destructive" onClick={() => handleDelete(client.id)}>
+                        <DropdownMenuItem className="text-rose-600 dark:text-rose-400" onClick={() => handleDelete(client.id)}>
                           Delete
                         </DropdownMenuItem>
                       </DropdownMenuContent>
@@ -139,22 +164,21 @@ export const ClientsListPage = () => {
         </Table>
       </div>
       
-      {/* Basic Pagination Controls */}
       {data && data.totalPages > 1 && (
-        <div className="flex items-center justify-between">
-          <p className="text-sm text-muted-foreground">
-            Showing page {data.currentPage + 1} of {data.totalPages}
+        <div className="flex items-center justify-between pt-2">
+          <p className="text-xs text-slate-500 dark:text-slate-400">
+            Showing page <strong className="text-slate-800 dark:text-slate-200">{data.currentPage + 1}</strong> of <strong className="text-slate-800 dark:text-slate-200">{data.totalPages}</strong>
           </p>
           <div className="flex gap-2">
-            <Button variant="outline" size="sm" onClick={() => setPage(p => Math.max(0, p - 1))} disabled={data.currentPage === 0}>
+            <Button variant="outline" size="sm" onClick={() => setPage(p => Math.max(0, p - 1))} disabled={data.currentPage === 0} className="h-8 text-xs rounded-lg">
               Previous
             </Button>
-            <Button variant="outline" size="sm" onClick={() => setPage(p => Math.min(data.totalPages - 1, p + 1))} disabled={data.currentPage === data.totalPages - 1}>
+            <Button variant="outline" size="sm" onClick={() => setPage(p => Math.min(data.totalPages - 1, p + 1))} disabled={data.currentPage === data.totalPages - 1} className="h-8 text-xs rounded-lg">
               Next
             </Button>
           </div>
         </div>
       )}
-    </div>
+    </motion.div>
   );
 };
