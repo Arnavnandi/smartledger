@@ -56,12 +56,17 @@ public class JwtTokenProvider {
         byte[] keyBytes;
         try {
             keyBytes = Decoders.BASE64.decode(jwtSecret);
-        } catch (IllegalArgumentException e1) {
+        } catch (Exception e1) {
             try {
                 keyBytes = Decoders.BASE64URL.decode(jwtSecret);
-            } catch (IllegalArgumentException e2) {
+            } catch (Exception e2) {
                 keyBytes = jwtSecret.getBytes(java.nio.charset.StandardCharsets.UTF_8);
             }
+        }
+        if (keyBytes.length < 32) {
+            byte[] paddedKey = new byte[32];
+            System.arraycopy(keyBytes, 0, paddedKey, 0, keyBytes.length);
+            keyBytes = paddedKey;
         }
         return Keys.hmacShaKeyFor(keyBytes);
     }

@@ -33,14 +33,15 @@ public class AuthService {
 
     @Transactional
     public User registerUser(RegisterRequest request) {
-        if (userRepository.existsByEmail(request.getEmail())) {
+        String cleanEmail = request.getEmail() != null ? request.getEmail().trim().toLowerCase() : "";
+        if (userRepository.existsByEmail(cleanEmail)) {
             throw new RuntimeException("Email is already in use!");
         }
 
         User user = new User();
         user.setFirstName(request.getFirstName());
         user.setLastName(request.getLastName());
-        user.setEmail(request.getEmail());
+        user.setEmail(cleanEmail);
         user.setPassword(passwordEncoder.encode(request.getPassword()));
         user.setRole(Role.BUSINESS_OWNER); // Defaulting to business owner for new signups
         
