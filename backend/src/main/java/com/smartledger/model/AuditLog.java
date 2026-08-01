@@ -22,22 +22,25 @@ public class AuditLog {
     private String ipAddress;
     private String userAgent;
 
-    @Column(nullable = false)
+    @Column(name = "action_type", nullable = true)
     private String actionType;
 
+    @Column(name = "entity_type")
     private String entityType;
+
+    @Column(name = "entity_id")
     private String entityId;
 
     @Column(columnDefinition = "TEXT")
     private String description;
 
-    @Column(columnDefinition = "TEXT")
+    @Column(name = "old_value", columnDefinition = "TEXT")
     private String oldValue;
 
-    @Column(columnDefinition = "TEXT")
+    @Column(name = "new_value", columnDefinition = "TEXT")
     private String newValue;
 
-    @Column(nullable = false)
+    @Column(name = "status", nullable = true)
     private String status = "SUCCESS";
 
     @Column(nullable = false, updatable = false)
