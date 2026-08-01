@@ -34,9 +34,24 @@ public class AuditLogSchemaInitializer {
             jdbcTemplate.execute("ALTER TABLE audit_logs ADD COLUMN IF NOT EXISTS new_value TEXT;");
             jdbcTemplate.execute("ALTER TABLE audit_logs ADD COLUMN IF NOT EXISTS status VARCHAR(50) DEFAULT 'SUCCESS';");
 
+            // Remove obsolete NOT NULL constraints on legacy columns
+            try {
+                jdbcTemplate.execute("ALTER TABLE audit_logs ALTER COLUMN action DROP NOT NULL;");
+            } catch (Exception ignored) {}
+            try {
+                jdbcTemplate.execute("ALTER TABLE audit_logs ALTER COLUMN resource_type DROP NOT NULL;");
+            } catch (Exception ignored) {}
+            try {
+                jdbcTemplate.execute("ALTER TABLE audit_logs ALTER COLUMN resource_id DROP NOT NULL;");
+            } catch (Exception ignored) {}
+            try {
+                jdbcTemplate.execute("ALTER TABLE audit_logs ALTER COLUMN details DROP NOT NULL;");
+            } catch (Exception ignored) {}
+
             // Populate action_type from legacy action column if present
             try {
                 jdbcTemplate.execute("UPDATE audit_logs SET action_type = action WHERE action_type IS NULL AND action IS NOT NULL;");
+                jdbcTemplate.execute("UPDATE audit_logs SET action = action_type WHERE action IS NULL AND action_type IS NOT NULL;");
                 jdbcTemplate.execute("UPDATE audit_logs SET entity_type = resource_type WHERE entity_type IS NULL AND resource_type IS NOT NULL;");
                 jdbcTemplate.execute("UPDATE audit_logs SET entity_id = resource_id WHERE entity_id IS NULL AND resource_id IS NOT NULL;");
                 jdbcTemplate.execute("UPDATE audit_logs SET description = details WHERE description IS NULL AND details IS NOT NULL;");

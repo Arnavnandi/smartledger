@@ -22,6 +22,10 @@ public class AuditLog {
     private String ipAddress;
     private String userAgent;
 
+    // Legacy field mapping to satisfy PostgreSQL legacy NOT NULL constraint
+    @Column(name = "action", nullable = true)
+    private String action;
+
     @Column(name = "action_type", nullable = true)
     private String actionType;
 
@@ -51,6 +55,9 @@ public class AuditLog {
         if (this.timestamp == null) {
             this.timestamp = LocalDateTime.now();
         }
+        if (this.action == null) {
+            this.action = this.actionType != null ? this.actionType : "SYSTEM_ACTION";
+        }
     }
 
     public AuditLog() {}
@@ -61,6 +68,7 @@ public class AuditLog {
         this.ipAddress = ipAddress;
         this.userAgent = userAgent;
         this.actionType = actionType;
+        this.action = actionType;
         this.entityType = entityType;
         this.entityId = entityId;
         this.description = description;
@@ -72,6 +80,7 @@ public class AuditLog {
     // Constructor for backward compatibility
     public AuditLog(String userEmail, String action, String resourceType, String resourceId, String details) {
         this.userEmail = userEmail;
+        this.action = action;
         this.actionType = action;
         this.entityType = resourceType;
         this.entityId = resourceId;
@@ -95,8 +104,19 @@ public class AuditLog {
     public String getUserAgent() { return userAgent; }
     public void setUserAgent(String userAgent) { this.userAgent = userAgent; }
 
-    public String getActionType() { return actionType; }
-    public void setActionType(String actionType) { this.actionType = actionType; }
+    public String getAction() { return action; }
+    public void setAction(String action) { 
+        this.action = action; 
+        if (this.actionType == null) this.actionType = action;
+    }
+
+    public String getActionType() { 
+        return actionType != null ? actionType : (action != null ? action : "SYSTEM_ACTION"); 
+    }
+    public void setActionType(String actionType) { 
+        this.actionType = actionType; 
+        this.action = actionType;
+    }
 
     public String getEntityType() { return entityType; }
     public void setEntityType(String entityType) { this.entityType = entityType; }
