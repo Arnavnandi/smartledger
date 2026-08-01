@@ -66,6 +66,11 @@ public class ReportController {
                 filename += ".pdf";
                 mediaType = MediaType.APPLICATION_PDF;
                 break;
+            case "json":
+                data = reportService.exportToJson(email, year, month);
+                filename += ".json";
+                mediaType = MediaType.APPLICATION_JSON;
+                break;
             default:
                 throw new RuntimeException("Unsupported format");
         }

@@ -29,7 +29,7 @@ export const reportService = {
     return res.data;
   },
 
-  exportReport: async (format: 'csv' | 'excel' | 'pdf', year: number, month?: number): Promise<void> => {
+  exportReport: async (format: 'csv' | 'excel' | 'pdf' | 'json', year: number, month?: number): Promise<void> => {
     const res = await api.get('/reports/export', {
       params: { format, year, month },
       responseType: 'blob'

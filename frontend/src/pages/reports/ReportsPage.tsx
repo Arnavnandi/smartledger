@@ -46,7 +46,7 @@ export const ReportsPage = () => {
     }
   };
 
-  const handleExport = (format: 'csv' | 'excel' | 'pdf') => {
+  const handleExport = (format: 'csv' | 'excel' | 'pdf' | 'json') => {
     if (viewType === 'monthly') {
       reportService.exportReport(format, year, month);
     } else {
@@ -84,6 +84,9 @@ export const ReportsPage = () => {
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => handleExport('csv')}>
                 <FileText className="w-4 h-4 mr-2 text-indigo-500" /> Export as CSV
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handleExport('json')}>
+                <FileText className="w-4 h-4 mr-2 text-purple-500" /> Export as JSON
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
