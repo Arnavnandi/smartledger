@@ -27,25 +27,38 @@ public class AuthController {
         this.refreshTokenService = refreshTokenService;
     }
 
+    private static final java.util.Map<String, Integer> loginAttempts = new java.util.concurrent.ConcurrentHashMap<>();
+    private static final int MAX_ATTEMPTS = 10;
+
     @PostMapping("/login")
     public ResponseEntity<?> authenticateUser(@Valid @RequestBody LoginRequest loginRequest) {
         String email = loginRequest.getEmail() != null ? loginRequest.getEmail().trim().toLowerCase() : "";
-        Authentication authentication = authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(email, loginRequest.getPassword())
-        );
-
-        CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
-        
-        if (!userDetails.isEmailVerified()) {
-            return ResponseEntity.badRequest().body(new ApiResponse(false, "Please verify your email before logging in."));
+        int attempts = loginAttempts.getOrDefault(email, 0);
+        if (attempts >= MAX_ATTEMPTS) {
+            return ResponseEntity.status(429).body(new ApiResponse(false, "Too many login attempts. Please try again later."));
         }
+        try {
+            Authentication authentication = authenticationManager.authenticate(
+                    new UsernamePasswordAuthenticationToken(email, loginRequest.getPassword())
+            );
 
-        SecurityContextHolder.getContext().setAuthentication(authentication);
-        String jwt = tokenProvider.generateToken(authentication);
-        
-        RefreshToken refreshToken = refreshTokenService.createRefreshToken(userDetails.getId());
+            CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
+            
+            if (!userDetails.isEmailVerified()) {
+                return ResponseEntity.badRequest().body(new ApiResponse(false, "Please verify your email before logging in."));
+            }
 
-        return ResponseEntity.ok(new JwtAuthenticationResponse(jwt, refreshToken.getToken()));
+            loginAttempts.remove(email);
+            SecurityContextHolder.getContext().setAuthentication(authentication);
+            String jwt = tokenProvider.generateToken(authentication);
+            
+            RefreshToken refreshToken = refreshTokenService.createRefreshToken(userDetails.getId());
+
+            return ResponseEntity.ok(new JwtAuthenticationResponse(jwt, refreshToken.getToken()));
+        } catch (org.springframework.security.core.AuthenticationException e) {
+            loginAttempts.put(email, attempts + 1);
+            throw e;
+        }
     }
 
     @PostMapping("/register")

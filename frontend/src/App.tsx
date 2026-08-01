@@ -30,6 +30,7 @@ import { AdminLogsPage } from './pages/admin/AdminLogsPage';
 
 import { PublicPaymentPage } from './pages/payment/PublicPaymentPage';
 import { ActivityPage } from './pages/activity/ActivityPage';
+import { AccessDeniedPage } from './pages/auth/AccessDeniedPage';
 
 const AppRoutes = () => {
   return (
@@ -41,6 +42,7 @@ const AppRoutes = () => {
       <Route path="/reset-password" element={<ResetPasswordPage />} />
       <Route path="/verify-email" element={<VerifyEmailPage />} />
       <Route path="/pay" element={<PublicPaymentPage />} />
+      <Route path="/unauthorized" element={<AccessDeniedPage />} />
 
       {/* Protected Routes */}
       <Route element={<ProtectedRoute />}>

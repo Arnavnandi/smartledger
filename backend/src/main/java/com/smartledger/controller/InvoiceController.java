@@ -62,24 +62,28 @@ public class InvoiceController {
     }
 
     @PostMapping
+    @org.springframework.security.access.prepost.PreAuthorize("hasAnyRole('OWNER', 'ACCOUNTANT', 'MANAGER', 'ADMIN', 'BUSINESS_OWNER')")
     public ResponseEntity<InvoiceResponse> createInvoice(@Valid @RequestBody InvoiceRequest request) {
         String email = getAuthenticatedUserEmail();
         return ResponseEntity.status(org.springframework.http.HttpStatus.CREATED).body(invoiceService.createInvoice(email, request));
     }
 
     @PutMapping("/{id}")
+    @org.springframework.security.access.prepost.PreAuthorize("hasAnyRole('OWNER', 'ACCOUNTANT', 'MANAGER', 'ADMIN', 'BUSINESS_OWNER')")
     public ResponseEntity<InvoiceResponse> updateInvoice(@PathVariable Long id, @Valid @RequestBody InvoiceRequest request) {
         String email = getAuthenticatedUserEmail();
         return ResponseEntity.ok(invoiceService.updateInvoice(email, id, request));
     }
 
     @PatchMapping("/{id}/status")
+    @org.springframework.security.access.prepost.PreAuthorize("hasAnyRole('OWNER', 'ACCOUNTANT', 'MANAGER', 'ADMIN', 'BUSINESS_OWNER')")
     public ResponseEntity<InvoiceResponse> updateInvoiceStatus(@PathVariable Long id, @Valid @RequestBody InvoiceStatusUpdateRequest request) {
         String email = getAuthenticatedUserEmail();
         return ResponseEntity.ok(invoiceService.updateInvoiceStatus(email, id, request));
     }
 
     @DeleteMapping("/{id}")
+    @org.springframework.security.access.prepost.PreAuthorize("hasAnyRole('OWNER', 'ACCOUNTANT', 'MANAGER', 'ADMIN', 'BUSINESS_OWNER')")
     public ResponseEntity<ApiResponse> deleteInvoice(@PathVariable Long id) {
         String email = getAuthenticatedUserEmail();
         invoiceService.deleteInvoice(email, id);

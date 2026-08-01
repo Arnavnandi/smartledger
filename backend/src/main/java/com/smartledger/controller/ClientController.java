@@ -64,18 +64,21 @@ public class ClientController {
     }
 
     @PostMapping
+    @org.springframework.security.access.prepost.PreAuthorize("hasAnyRole('OWNER', 'ACCOUNTANT', 'MANAGER', 'ADMIN', 'BUSINESS_OWNER')")
     public ResponseEntity<ClientResponse> createClient(@Valid @RequestBody ClientRequest request) {
         String email = getAuthenticatedUserEmail();
         return ResponseEntity.status(org.springframework.http.HttpStatus.CREATED).body(clientService.createClient(email, request));
     }
 
     @PutMapping("/{id}")
+    @org.springframework.security.access.prepost.PreAuthorize("hasAnyRole('OWNER', 'ACCOUNTANT', 'MANAGER', 'ADMIN', 'BUSINESS_OWNER')")
     public ResponseEntity<ClientResponse> updateClient(@PathVariable Long id, @Valid @RequestBody ClientRequest request) {
         String email = getAuthenticatedUserEmail();
         return ResponseEntity.ok(clientService.updateClient(email, id, request));
     }
 
     @DeleteMapping("/{id}")
+    @org.springframework.security.access.prepost.PreAuthorize("hasAnyRole('OWNER', 'ACCOUNTANT', 'MANAGER', 'ADMIN', 'BUSINESS_OWNER')")
     public ResponseEntity<ApiResponse> deleteClient(@PathVariable Long id) {
         String email = getAuthenticatedUserEmail();
         clientService.deleteClient(email, id);

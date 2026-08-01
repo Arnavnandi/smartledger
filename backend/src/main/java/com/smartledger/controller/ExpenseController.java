@@ -65,18 +65,21 @@ public class ExpenseController {
     }
 
     @PostMapping
+    @org.springframework.security.access.prepost.PreAuthorize("hasAnyRole('OWNER', 'ACCOUNTANT', 'MANAGER', 'ADMIN', 'BUSINESS_OWNER')")
     public ResponseEntity<ExpenseResponse> createExpense(@Valid @RequestBody ExpenseRequest request) {
         String email = getAuthenticatedUserEmail();
         return ResponseEntity.status(org.springframework.http.HttpStatus.CREATED).body(expenseService.saveExpense(email, request));
     }
 
     @PutMapping("/{id}")
+    @org.springframework.security.access.prepost.PreAuthorize("hasAnyRole('OWNER', 'ACCOUNTANT', 'MANAGER', 'ADMIN', 'BUSINESS_OWNER')")
     public ResponseEntity<ExpenseResponse> updateExpense(@PathVariable Long id, @Valid @RequestBody ExpenseRequest request) {
         String email = getAuthenticatedUserEmail();
         return ResponseEntity.ok(expenseService.updateExpense(email, id, request));
     }
 
     @DeleteMapping("/{id}")
+    @org.springframework.security.access.prepost.PreAuthorize("hasAnyRole('OWNER', 'ACCOUNTANT', 'MANAGER', 'ADMIN', 'BUSINESS_OWNER')")
     public ResponseEntity<ApiResponse> deleteExpense(@PathVariable Long id) {
         String email = getAuthenticatedUserEmail();
         expenseService.deleteExpense(email, id);
