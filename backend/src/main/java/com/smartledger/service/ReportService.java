@@ -182,8 +182,10 @@ public class ReportService {
     }
 
     private List<Invoice> getPaidInvoicesInRange(Company company, LocalDate start, LocalDate end) {
-        return invoiceRepository.findAll().stream()
-                .filter(i -> i.getCompany() != null && i.getCompany().getId().equals(company.getId()) && i.getStatus() == com.smartledger.model.InvoiceStatus.PAID)
+        org.springframework.data.domain.Page<Invoice> page = invoiceRepository.findByCompany(company, org.springframework.data.domain.Pageable.unpaged());
+        List<Invoice> invoices = (page != null && page.getContent() != null) ? page.getContent() : List.of();
+        return invoices.stream()
+                .filter(i -> i.getStatus() == com.smartledger.model.InvoiceStatus.PAID)
                 .filter(i -> {
                     LocalDate d = i.getIssueDate() != null ? i.getIssueDate() : (i.getCreatedAt() != null ? i.getCreatedAt().toLocalDate() : null);
                     if (d == null) return false;

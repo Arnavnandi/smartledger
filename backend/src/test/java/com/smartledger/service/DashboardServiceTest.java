@@ -100,5 +100,31 @@ class DashboardServiceTest {
 
         assertEquals(1424201.00, summary.getTotalRevenue());
         assertEquals(70501.44, summary.getTotalExpenses());
+        assertEquals(0.00, summary.getPendingPayments());
+    }
+
+    @Test
+    void testCashFlowMatchesKpiTotals() {
+        Company company = authContextService.getAuthenticatedUserCompany("test@example.com");
+
+        Invoice invoice = new Invoice();
+        invoice.setTotalAmount(5000.00);
+        invoice.setIssueDate(LocalDate.now());
+
+        Expense expense = new Expense();
+        expense.setVendorName("Office Supply");
+        expense.setAmount(new BigDecimal("1200.00"));
+        expense.setExpenseDate(LocalDate.now());
+
+        Mockito.when(invoiceRepository.findPaidInvoicesSince(eq(company), any())).thenReturn(List.of(invoice));
+        Mockito.when(expenseRepository.findAllByCompany(eq(company))).thenReturn(List.of(expense));
+
+        List<ChartDataPoint> points = dashboardService.getCashFlow("test@example.com", 6);
+        
+        double totalChartRevenue = points.stream().mapToDouble(ChartDataPoint::getRevenue).sum();
+        double totalChartExpense = points.stream().mapToDouble(ChartDataPoint::getExpense).sum();
+
+        assertEquals(5000.00, totalChartRevenue, 0.01);
+        assertEquals(1200.00, totalChartExpense, 0.01);
     }
 }

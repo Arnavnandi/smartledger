@@ -103,25 +103,16 @@ public class DashboardService {
             for (Expense exp : allExpenses) {
                 LocalDate date = exp.getExpenseDate() != null 
                         ? exp.getExpenseDate() 
-                        : (exp.getCreatedAt() != null ? exp.getCreatedAt().toLocalDate() : LocalDate.now());
+                        : (exp.getCreatedAt() != null ? exp.getCreatedAt().toLocalDate() : null);
                 
+                if (date == null) continue;
                 String label = date.format(formatter);
                 double amt = exp.getAmount() != null ? exp.getAmount().doubleValue() : 0.0;
-                logger.info("[EXPENSE AGGREGATE] Id: {}, Vendor: {}, Amount: {}, Date: {}, MappedLabel: {}", 
-                        exp.getId(), exp.getVendorName(), amt, date, label);
                 
                 if (monthlyTotals.containsKey(label)) {
                     monthlyTotals.get(label)[1] += amt;
-                } else if (date.isBefore(startDate)) {
-                    String earliestLabel = LocalDate.now().minusMonths(months - 1).format(formatter);
-                    if (monthlyTotals.containsKey(earliestLabel)) {
-                        monthlyTotals.get(earliestLabel)[1] += amt;
-                    }
-                } else {
-                    String currentLabel = LocalDate.now().format(formatter);
-                    if (monthlyTotals.containsKey(currentLabel)) {
-                        monthlyTotals.get(currentLabel)[1] += amt;
-                    }
+                    logger.info("[EXPENSE AGGREGATE] Id: {}, Vendor: {}, Amount: {}, Date: {}, MappedLabel: {}", 
+                            exp.getId(), exp.getVendorName(), amt, date, label);
                 }
             }
         }

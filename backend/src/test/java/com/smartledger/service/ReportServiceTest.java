@@ -97,5 +97,8 @@ class ReportServiceTest {
 
         assertEquals(70501.44, response.getTotalExpenses());
         assertFalse(response.getBreakdown().isEmpty());
+
+        double sumExpensesInBreakdown = response.getBreakdown().stream().mapToDouble(com.smartledger.model.dto.ChartDataPoint::getExpense).sum();
+        assertEquals(response.getTotalExpenses(), sumExpensesInBreakdown, 0.01);
     }
 }
