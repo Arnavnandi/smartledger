@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -11,8 +11,9 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
-import { AlertCircle, UploadCloud, Plus, Loader2, Sparkles } from 'lucide-react';
+import { AlertCircle, UploadCloud, Plus, Loader2, Sparkles, Bot, CheckCircle2, RotateCw } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { toast } from 'sonner';
 import type { ExpenseRequest } from '../../types/expense.types';
 import { useCompany } from '../../context/CompanyContext';
 
@@ -30,6 +31,12 @@ export const ExpenseFormPage = () => {
   const navigate = useNavigate();
   const [error, setError] = useState('');
   const [isUploading, setIsUploading] = useState(false);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [uploadSuccess, setUploadSuccess] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
   const [categories, setCategories] = useState<ExpenseCategory[]>([]);
   const [categoriesLoading, setCategoriesLoading] = useState(true);
 
@@ -74,13 +81,13 @@ export const ExpenseFormPage = () => {
     }
   };
 
-  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
+  const processFile = async (file: File) => {
     if (!file) return;
-
+    setSelectedFile(file);
     setIsUploading(true);
-    setError('');
-    
+    setUploadError(null);
+    setUploadSuccess(false);
+
     try {
       const parsedData = await expenseService.uploadReceipt(file);
       
@@ -95,11 +102,38 @@ export const ExpenseFormPage = () => {
       }
       if (parsedData.receiptUrl) setValue('receiptUrl', parsedData.receiptUrl);
       
+      setUploadSuccess(true);
+      toast.success("Receipt parsed successfully!");
     } catch (err) {
-      setError('Failed to upload and parse receipt. Please enter manually.');
+      console.error(err);
+      setUploadError("Failed to extract details from receipt image. Please enter details manually or retry.");
     } finally {
       setIsUploading(false);
-      e.target.value = '';
+    }
+  };
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files?.[0]) {
+      processFile(e.target.files[0]);
+    }
+    e.target.value = '';
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    if (!isUploading) setIsDragging(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+    if (!isUploading && e.dataTransfer.files?.[0]) {
+      processFile(e.dataTransfer.files[0]);
     }
   };
 
@@ -117,7 +151,7 @@ export const ExpenseFormPage = () => {
       const newCategory = await expenseCategoryService.createCategory({
         name: newCategoryName.trim(),
         color: newCategoryColor
-      } as any); // using as any since color might not be typed if only name/description exist, wait, the service type expects name and description. Let's fix that if needed. Actually it was sent in bash script as {"name": "...", "color": "..."} so it's supported.
+      } as any);
       
       setCategories(prev => [...prev, newCategory]);
       setValue('categoryId', newCategory.id);
@@ -145,45 +179,117 @@ export const ExpenseFormPage = () => {
         </Alert>
       )}
 
-      <Card className="border-dashed border-2 border-primary/20 bg-primary/5">
-        <CardContent className="flex flex-col items-center justify-center p-10 text-center">
-          <UploadCloud className="h-10 w-10 text-primary mb-4" />
-          <h3 className="text-lg font-semibold mb-1">AI Receipt Auto-fill</h3>
-          <p className="text-sm text-muted-foreground mb-4">
-            Upload a receipt image and our AI will automatically extract the vendor, date, and amount!
-          </p>
-          <div className="relative inline-block">
-            <Input 
-              type="file" 
-              accept="image/*" 
-              className={`absolute inset-0 w-full h-full opacity-0 z-10 ${isUploading ? 'cursor-wait' : 'cursor-pointer'}`}
-              onChange={handleFileUpload}
-              disabled={isUploading}
-            />
-            <Button 
-              type="button" 
-              disabled={isUploading}
-              className={`h-11 px-6 font-semibold rounded-xl text-white transition-all duration-200 ease-in-out shadow-md border-0 ${
-                isUploading 
-                  ? 'bg-purple-600 dark:bg-purple-600 text-white cursor-wait opacity-100 disabled:opacity-100' 
-                  : 'bg-purple-600 hover:bg-purple-700 dark:bg-purple-600 dark:hover:bg-purple-500 hover:scale-[1.02] active:scale-[0.98]'
-              }`}
-            >
-              {isUploading ? (
-                <span className="flex items-center justify-center gap-2 font-bold text-white tracking-wide">
-                  <Loader2 className="w-4 h-4 text-white animate-spin flex-shrink-0" />
-                  <span>Parsing receipt with AI...</span>
-                </span>
-              ) : (
-                <span className="flex items-center justify-center gap-2">
-                  <Sparkles className="w-4 h-4 text-purple-200" />
-                  <span>Upload Receipt</span>
-                </span>
-              )}
-            </Button>
+      <input 
+        type="file" 
+        ref={fileInputRef} 
+        accept="image/*" 
+        className="hidden" 
+        onChange={handleFileSelect} 
+        disabled={isUploading}
+      />
+
+      {isUploading ? (
+        <div className="bg-gradient-to-br from-indigo-600 via-indigo-700 to-purple-800 text-white p-6 rounded-2xl shadow-lg space-y-4 border border-indigo-500/30">
+          <div className="flex items-center gap-3 border-b border-indigo-400/30 pb-3">
+            <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center backdrop-blur-sm shrink-0">
+              <Bot className="w-5 h-5 text-indigo-200 animate-bounce" />
+            </div>
+            <div>
+              <h4 className="font-bold text-sm text-white flex items-center gap-2">
+                <Loader2 className="w-4 h-4 text-white animate-spin shrink-0" />
+                Parsing receipt with AI...
+              </h4>
+              <p className="text-[11px] text-indigo-200 mt-0.5">
+                {selectedFile?.name || 'Receipt Image'} {selectedFile ? `(${(selectedFile.size / 1024).toFixed(1)} KB)` : ''}
+              </p>
+            </div>
           </div>
-        </CardContent>
-      </Card>
+
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 text-xs text-indigo-100 font-medium">
+            <div className="flex items-center gap-2 bg-white/10 px-3 py-2 rounded-xl backdrop-blur-sm">
+              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 animate-pulse shrink-0" />
+              <span>Extracting vendor...</span>
+            </div>
+            <div className="flex items-center gap-2 bg-white/10 px-3 py-2 rounded-xl backdrop-blur-sm">
+              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 animate-pulse shrink-0" />
+              <span>Reading total amount...</span>
+            </div>
+            <div className="flex items-center gap-2 bg-white/10 px-3 py-2 rounded-xl backdrop-blur-sm">
+              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 animate-pulse shrink-0" />
+              <span>Detecting date...</span>
+            </div>
+          </div>
+          <p className="text-[11px] text-indigo-300 text-center font-medium">Please wait while Gemini AI analyzes the receipt document...</p>
+        </div>
+      ) : uploadSuccess ? (
+        <div className="bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800/60 p-4 rounded-2xl flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-600 dark:text-emerald-400 shrink-0">
+              <CheckCircle2 className="w-5 h-5" />
+            </div>
+            <div>
+              <h4 className="text-xs font-extrabold text-emerald-800 dark:text-emerald-300 flex items-center gap-1.5">
+                Receipt Parsed Successfully!
+              </h4>
+              <p className="text-[11px] text-emerald-600 dark:text-emerald-400">Vendor, amount & date auto-populated below.</p>
+            </div>
+          </div>
+          <Button 
+            type="button" 
+            variant="outline" 
+            size="sm" 
+            onClick={() => { setUploadSuccess(false); setSelectedFile(null); fileInputRef.current?.click(); }}
+            className="h-8 text-xs text-slate-700 dark:text-slate-200 border-slate-200 dark:border-slate-800 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 shrink-0"
+          >
+            Scan Another
+          </Button>
+        </div>
+      ) : uploadError ? (
+        <div className="bg-rose-50 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-800/60 p-4 rounded-2xl flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <AlertCircle className="w-5 h-5 text-rose-600 dark:text-rose-400 shrink-0" />
+            <p className="text-xs font-semibold text-rose-800 dark:text-rose-300">{uploadError}</p>
+          </div>
+          <Button 
+            type="button" 
+            variant="outline" 
+            size="sm" 
+            onClick={() => { setUploadError(null); fileInputRef.current?.click(); }}
+            className="h-8 text-xs text-rose-700 dark:text-rose-300 border-rose-300 dark:border-rose-800 rounded-xl hover:bg-rose-100 dark:hover:bg-rose-950/50 shrink-0"
+          >
+            <RotateCw className="w-3.5 h-3.5 mr-1" /> Retry
+          </Button>
+        </div>
+      ) : (
+        <Card 
+          onDragOver={handleDragOver}
+          onDragLeave={handleDragLeave}
+          onDrop={handleDrop}
+          onClick={() => fileInputRef.current?.click()}
+          className={`border-2 border-dashed transition-all duration-200 cursor-pointer rounded-2xl text-center p-8 ${
+            isDragging 
+              ? 'border-indigo-500 bg-indigo-50/50 dark:bg-indigo-950/30 scale-[1.01]' 
+              : 'border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50 hover:border-indigo-400 dark:hover:border-indigo-600 hover:bg-slate-100/50 dark:hover:bg-slate-900/80'
+          }`}
+        >
+          <CardContent className="p-0 flex flex-col items-center justify-center space-y-3">
+            <div className="w-12 h-12 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-600 dark:text-indigo-400 flex items-center justify-center shadow-sm">
+              <UploadCloud className="w-6 h-6" />
+            </div>
+            <div>
+              <h3 className="text-sm font-extrabold text-slate-900 dark:text-white flex items-center justify-center gap-1.5">
+                <Sparkles className="w-4 h-4 text-indigo-500" /> AI Receipt Auto-fill
+              </h3>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                Drag & drop receipt image here, or <span className="text-indigo-600 dark:text-indigo-400 font-bold underline">click to browse</span>
+              </p>
+            </div>
+            <span className="inline-block text-[10px] font-semibold text-slate-400 dark:text-slate-500 bg-white dark:bg-slate-800 px-2.5 py-1 rounded-full border border-slate-200 dark:border-slate-700">
+              Supports PNG, JPG, WEBP (Up to 10MB)
+            </span>
+          </CardContent>
+        </Card>
+      )}
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
         <Card>
