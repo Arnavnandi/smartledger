@@ -15,6 +15,7 @@ import { clientService } from '../../services/client.service';
 import { aiService } from '../../services/ai.service';
 import type { InvoiceRequest } from '../../types/invoice.types';
 import type { Client } from '../../types/client.types';
+import { Loader2 } from 'lucide-react';
 import { useCompany } from '../../context/CompanyContext';
 
 export const InvoiceBuilderPage = () => {
@@ -347,7 +348,14 @@ export const InvoiceBuilderPage = () => {
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsAiModalOpen(false)}>Cancel</Button>
             <Button onClick={handleAiAutoFill} disabled={isAiLoading || !aiPrompt.trim()}>
-              {isAiLoading ? 'Generating...' : 'Auto-fill Items'}
+              {isAiLoading ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Extracting Facts...
+                </>
+              ) : (
+                'Auto-fill Invoice'
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>

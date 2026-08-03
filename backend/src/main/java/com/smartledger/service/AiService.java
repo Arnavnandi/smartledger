@@ -50,7 +50,7 @@ public class AiService {
 
     private String callGemini(String prompt) {
         if (aiConfig.getGeminiApiKey() == null || aiConfig.getGeminiApiKey().isEmpty()) {
-            return "{\"error\": \"Gemini API Key is not configured.\"}";
+            return "AI service is temporarily busy. Please try again in a few seconds.";
         }
 
         String url = "https://generativelanguage.googleapis.com/v1beta/models/" + aiConfig.getGeminiModel() + ":generateContent?key=" + aiConfig.getGeminiApiKey();
@@ -70,50 +70,58 @@ public class AiService {
         try {
             ResponseEntity<String> response = executeWithRetry(url, request);
             JsonNode root = objectMapper.readTree(response.getBody());
-            String text = root.path("candidates").get(0).path("content").path("parts").get(0).path("text").asText();
-            
-            text = text.replaceAll("^```(?:json)?\\s*", "").replaceAll("\\s*```$", "").trim();
-            return text;
+            JsonNode candidates = root.path("candidates");
+            if (candidates.isArray() && candidates.size() > 0) {
+                String text = candidates.get(0).path("content").path("parts").get(0).path("text").asText();
+                text = text.replaceAll("^```(?:json)?\\s*", "").replaceAll("\\s*```$", "").trim();
+                return text;
+            }
+            return "AI service is temporarily busy. Please try again in a few seconds.";
         } catch (Exception e) {
-            logger.error("Failed to process AI request", e);
-            throw new RuntimeException("Failed to process AI request. Service temporarily unavailable.");
+            logger.error("[AI RATE-LIMIT] Gemini request failed after retries: {}", e.getMessage());
+            return "AI service is temporarily busy. Please try again in a few seconds.";
         }
     }
 
     private ResponseEntity<String> executeWithRetry(String url, HttpEntity<Map<String, Object>> request) {
         int maxRetries = 3;
-        long backoffTime = 1000;
+        long backoffTime = 2000; // 2 seconds initial backoff (2s -> 4s -> 8s)
         Exception lastException = null;
 
-        for (int i = 0; i < maxRetries; i++) {
+        for (int i = 1; i <= maxRetries; i++) {
             try {
                 return restTemplate.postForEntity(url, request, String.class);
             } catch (org.springframework.web.client.HttpStatusCodeException e) {
                 lastException = e;
-                if (e.getStatusCode().value() == 503 || e.getStatusCode().value() == 429) {
-                    logger.warn("Gemini API returned " + e.getStatusCode().value() + ", retrying in " + backoffTime + "ms");
+                if (e.getStatusCode().value() == 429 || e.getStatusCode().value() == 503) {
+                    logger.warn("[AI RETRY] Gemini API returned status {}, attempt {}/{} failed. Retrying in {}ms...", 
+                            e.getStatusCode().value(), i, maxRetries, backoffTime);
                     try {
                         Thread.sleep(backoffTime);
                     } catch (InterruptedException ie) {
                         Thread.currentThread().interrupt();
+                        break;
                     }
-                    backoffTime *= 2;
+                    backoffTime *= 2; // 2000ms -> 4000ms -> 8000ms
                 } else {
-                    logger.error("Gemini API returned error: " + e.getResponseBodyAsString());
+                    logger.error("[AI RETRY] Non-retryable Gemini status error: {}", e.getStatusCode().value());
                     throw e;
                 }
             } catch (Exception e) {
                 lastException = e;
-                logger.warn("Gemini API request failed, retrying in " + backoffTime + "ms: " + e.getMessage());
+                logger.warn("[AI RETRY] Gemini connection error on attempt {}/{}. Retrying in {}ms... Error: {}", 
+                        i, maxRetries, backoffTime, e.getMessage());
                 try {
                     Thread.sleep(backoffTime);
                 } catch (InterruptedException ie) {
                     Thread.currentThread().interrupt();
+                    break;
                 }
                 backoffTime *= 2;
             }
         }
-        throw new RuntimeException("Failed after " + maxRetries + " retries", lastException);
+        logger.error("[AI RETRY EXHAUSTED] All {} retries failed. Returning friendly fallback response.", maxRetries);
+        throw new RuntimeException("AI service is temporarily busy. Please try again in a few seconds.", lastException);
     }
 
     public AiExecutiveSummaryResponse getExecutiveSummary(String email) {
