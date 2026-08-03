@@ -26,6 +26,8 @@ import java.util.stream.Collectors;
 @Service
 public class ExpenseService {
 
+    private static final org.slf4j.Logger logger = org.slf4j.LoggerFactory.getLogger(ExpenseService.class);
+
     private final ExpenseRepository expenseRepository;
     private final ExpenseCategoryRepository categoryRepository;
     private final FileStorageService fileStorageService;
@@ -161,24 +163,45 @@ public class ExpenseService {
     }
 
     public ExpenseRequest uploadAndParseReceipt(String email, MultipartFile file) {
-        Company company = authContextService.getAuthenticatedUserCompany(email); // Auth check
+        Company company = authContextService.getAuthenticatedUserCompany(email);
+        
+        if (file == null || file.isEmpty()) {
+            logger.error("[RECEIPT UPLOAD ERROR] Received empty file upload request");
+            throw new RuntimeException("Uploaded receipt file is empty.");
+        }
+
+        logger.info("[RECEIPT UPLOAD] File Name: {}, Size: {} bytes, ContentType: {}", 
+                file.getOriginalFilename(), file.getSize(), file.getContentType());
         
         // 1. Store the file securely
         String fileUrl = fileStorageService.storeFile(file);
         
         // 2. Pass the file to Gemini AI for Multi-modal parsing
+        byte[] imageBytes;
         try {
-            byte[] imageBytes = file.getBytes();
-            String mimeType = file.getContentType() != null ? file.getContentType() : "image/jpeg";
-            String jsonResult = aiService.extractReceiptData(imageBytes, mimeType);
-            
-            System.out.println("Gemini JSON Response: " + jsonResult);
-            
-            if (jsonResult == null || jsonResult.trim().isEmpty() || jsonResult.contains("\"error\"")) {
-                throw new RuntimeException("Gemini returned invalid response: " + jsonResult);
-            }
+            imageBytes = file.getBytes();
+        } catch (Exception e) {
+            logger.error("[RECEIPT UPLOAD ERROR] Failed to read file bytes: {}", e.getMessage(), e);
+            throw new RuntimeException("Failed to read uploaded image file: " + e.getMessage());
+        }
 
-            // 3. Parse JSON into ExpenseRequest
+        String mimeType = file.getContentType() != null ? file.getContentType() : "image/jpeg";
+        if (mimeType.equalsIgnoreCase("application/octet-stream")) {
+            String name = file.getOriginalFilename() != null ? file.getOriginalFilename().toLowerCase() : "";
+            if (name.endsWith(".png")) mimeType = "image/png";
+            else if (name.endsWith(".webp")) mimeType = "image/webp";
+            else mimeType = "image/jpeg";
+        }
+
+        String jsonResult = aiService.extractReceiptData(imageBytes, mimeType);
+        logger.info("[RECEIPT UPLOAD] Gemini Raw Response: {}", jsonResult);
+        
+        if (jsonResult == null || jsonResult.trim().isEmpty() || jsonResult.contains("\"error\"")) {
+            throw new RuntimeException("AI service failed to generate valid JSON: " + jsonResult);
+        }
+
+        // 3. Parse JSON into ExpenseRequest
+        try {
             objectMapper.registerModule(new com.fasterxml.jackson.datatype.jsr310.JavaTimeModule());
             objectMapper.configure(com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
             ExpenseRequest request = objectMapper.readValue(jsonResult, ExpenseRequest.class);
@@ -204,11 +227,12 @@ public class ExpenseService {
                 }
             }
 
+            logger.info("[RECEIPT UPLOAD PARSED OBJECT] Vendor: {}, Amount: {}, Date: {}, ReceiptUrl: {}", 
+                    request.getVendorName(), request.getAmount(), request.getExpenseDate(), request.getReceiptUrl());
             return request;
         } catch (Exception e) {
-            System.err.println("Failed to parse Gemini response: " + e.getMessage());
-            e.printStackTrace();
-            throw new RuntimeException("AI Receipt parsing failed: " + e.getMessage(), e);
+            logger.error("[RECEIPT UPLOAD PARSE ERROR] Failed to deserialize JSON: {}", jsonResult, e);
+            throw new RuntimeException("Invalid AI response / JSON parsing failed: " + e.getMessage());
         }
     }
 

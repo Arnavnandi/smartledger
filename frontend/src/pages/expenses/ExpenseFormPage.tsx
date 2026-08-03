@@ -104,9 +104,10 @@ export const ExpenseFormPage = () => {
       
       setUploadSuccess(true);
       toast.success("Receipt parsed successfully!");
-    } catch (err) {
-      console.error(err);
-      setUploadError("Failed to extract details from receipt image. Please enter details manually or retry.");
+    } catch (err: any) {
+      console.error("[RECEIPT UPLOAD ERROR]", err);
+      const serverMsg = err.response?.data?.message || err.message || "Failed to extract details from receipt image.";
+      setUploadError(serverMsg);
     } finally {
       setIsUploading(false);
     }

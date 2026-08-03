@@ -319,7 +319,8 @@ public class AiService {
 
     public String extractReceiptData(byte[] imageBytes, String mimeType) {
         if (aiConfig.getGeminiApiKey() == null || aiConfig.getGeminiApiKey().isEmpty()) {
-            return "{\"error\": \"Gemini API Key is not configured.\"}";
+            logger.error("[RECEIPT OCR ERROR] Gemini API Key is missing in server environment");
+            throw new RuntimeException("Gemini API Key is not configured in server environment.");
         }
         
         String url = "https://generativelanguage.googleapis.com/v1beta/models/" + aiConfig.getGeminiModel() + ":generateContent?key=" + aiConfig.getGeminiApiKey();
@@ -327,9 +328,21 @@ public class AiService {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
 
-        String prompt = "You are an AI accountant. Analyze this receipt image and extract the following details into a structured JSON object: " +
-                "'vendorName' (string), 'amount' (number, total amount printed on receipt), 'detectedCurrency' (string, ISO 3-letter currency code detected e.g. USD, EUR, GBP, INR, CAD, AUD, JPY, AED), 'expenseDate' (string, YYYY-MM-DD), 'category' (string, guess based on items). " +
-                "Return ONLY a valid JSON object. No Markdown blocks, no additional text.";
+        String prompt = "You are an expert AI accountant and receipt OCR parser. Analyze this receipt image and extract explicit details into a structured JSON object:\n" +
+                "{\n" +
+                "  \"vendorName\": \"Store / Vendor Name\",\n" +
+                "  \"amount\": 0.00,\n" +
+                "  \"detectedCurrency\": \"INR\",\n" +
+                "  \"expenseDate\": \"YYYY-MM-DD\",\n" +
+                "  \"category\": \"Category name\"\n" +
+                "}\n" +
+                "CRITICAL RULES:\n" +
+                "1. If vendorName is not clearly legible, set vendorName to \"Receipt Expense\".\n" +
+                "2. If expenseDate is missing, format date as today's date YYYY-MM-DD.\n" +
+                "3. Amount must be a positive decimal number representing the final total.\n" +
+                "4. Return ONLY valid JSON matching this schema. No markdown formatting or extra text.";
+
+        logger.info("[RECEIPT OCR] Prompt sent to Gemini:\n{}", prompt);
 
         String base64Image = java.util.Base64.getEncoder().encodeToString(imageBytes);
 
@@ -353,13 +366,26 @@ public class AiService {
         try {
             ResponseEntity<String> response = executeWithRetry(url, request);
             JsonNode root = objectMapper.readTree(response.getBody());
-            String text = root.path("candidates").get(0).path("content").path("parts").get(0).path("text").asText();
-            
-            text = text.replaceAll("^```(?:json)?\\s*", "").replaceAll("\\s*```$", "").trim();
-            return text;
+            JsonNode candidates = root.path("candidates");
+            if (candidates.isArray() && candidates.size() > 0) {
+                String text = candidates.get(0).path("content").path("parts").get(0).path("text").asText();
+                text = text.replaceAll("^```(?:json)?\\s*", "").replaceAll("\\s*```$", "").trim();
+                logger.info("[RECEIPT OCR SUCCESS] Raw Gemini Response:\n{}", text);
+                return text;
+            }
+            throw new RuntimeException("Gemini Vision API returned empty response candidates.");
+        } catch (org.springframework.web.client.HttpStatusCodeException e) {
+            logger.error("[RECEIPT OCR HTTP ERROR] Status {}: {}", e.getStatusCode().value(), e.getResponseBodyAsString(), e);
+            if (e.getStatusCode().value() == 429) {
+                throw new RuntimeException("Gemini API rate limit exceeded (HTTP 429). Please try again in a few seconds.");
+            }
+            throw new RuntimeException("Gemini API HTTP " + e.getStatusCode().value() + " Error: " + e.getResponseBodyAsString());
         } catch (Exception e) {
-            logger.error("Failed to process receipt image", e);
-            throw new RuntimeException("Failed to process receipt image. Please try again later.");
+            logger.error("[RECEIPT OCR EXCEPTION] Failed to process receipt image", e);
+            if (e.getMessage() != null && !e.getMessage().isBlank()) {
+                throw new RuntimeException(e.getMessage());
+            }
+            throw new RuntimeException("Receipt parsing failed: " + e.getClass().getSimpleName());
         }
     }
 
