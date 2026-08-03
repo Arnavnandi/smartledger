@@ -225,8 +225,46 @@ export const ReportsPage = () => {
                         ]}
                       />
                       <Legend verticalAlign="top" align="right" height={36} iconType="circle" />
-                      <Bar dataKey="revenue" name="Revenue" fill="#10b981" radius={[6, 6, 0, 0]} minPointSize={4} />
-                      <Bar dataKey="expense" name="Expense" fill="#f43f5e" radius={[6, 6, 0, 0]} minPointSize={4} />
+                      <Bar 
+                        dataKey="revenue" 
+                        name="Revenue" 
+                        fill="#10b981" 
+                        shape={(props: any) => {
+                          const { fill, x, y, width, height, value } = props;
+                          if (!value || Number(value) <= 0 || !height || height <= 0) return <g />;
+                          return (
+                            <rect
+                              x={x}
+                              y={y}
+                              width={width}
+                              height={height}
+                              fill={fill}
+                              rx={6}
+                              ry={6}
+                            />
+                          );
+                        }} 
+                      />
+                      <Bar 
+                        dataKey="expense" 
+                        name="Expense" 
+                        fill="#f43f5e" 
+                        shape={(props: any) => {
+                          const { fill, x, y, width, height, value } = props;
+                          if (!value || Number(value) <= 0 || !height || height <= 0) return <g />;
+                          return (
+                            <rect
+                              x={x}
+                              y={y}
+                              width={width}
+                              height={height}
+                              fill={fill}
+                              rx={6}
+                              ry={6}
+                            />
+                          );
+                        }} 
+                      />
                     </BarChart>
                   </ResponsiveContainer>
                 </div>
