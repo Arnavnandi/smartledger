@@ -11,7 +11,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
-import { AlertCircle, UploadCloud, Plus } from 'lucide-react';
+import { AlertCircle, UploadCloud, Plus, Loader2, Sparkles } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import type { ExpenseRequest } from '../../types/expense.types';
 import { useCompany } from '../../context/CompanyContext';
@@ -152,16 +152,34 @@ export const ExpenseFormPage = () => {
           <p className="text-sm text-muted-foreground mb-4">
             Upload a receipt image and our AI will automatically extract the vendor, date, and amount!
           </p>
-          <div className="relative">
+          <div className="relative inline-block">
             <Input 
               type="file" 
               accept="image/*" 
-              className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+              className={`absolute inset-0 w-full h-full opacity-0 z-10 ${isUploading ? 'cursor-wait' : 'cursor-pointer'}`}
               onChange={handleFileUpload}
               disabled={isUploading}
             />
-            <Button type="button" disabled={isUploading}>
-              {isUploading ? 'Parsing with AI...' : 'Upload Receipt'}
+            <Button 
+              type="button" 
+              disabled={isUploading}
+              className={`h-11 px-6 font-semibold rounded-xl text-white transition-all duration-200 ease-in-out shadow-md border-0 ${
+                isUploading 
+                  ? 'bg-purple-600 dark:bg-purple-600 text-white cursor-wait opacity-100 disabled:opacity-100' 
+                  : 'bg-purple-600 hover:bg-purple-700 dark:bg-purple-600 dark:hover:bg-purple-500 hover:scale-[1.02] active:scale-[0.98]'
+              }`}
+            >
+              {isUploading ? (
+                <span className="flex items-center justify-center gap-2 font-bold text-white tracking-wide">
+                  <Loader2 className="w-4 h-4 text-white animate-spin flex-shrink-0" />
+                  <span>Parsing receipt with AI...</span>
+                </span>
+              ) : (
+                <span className="flex items-center justify-center gap-2">
+                  <Sparkles className="w-4 h-4 text-purple-200" />
+                  <span>Upload Receipt</span>
+                </span>
+              )}
             </Button>
           </div>
         </CardContent>
