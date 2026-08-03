@@ -223,11 +223,60 @@ public class AiService {
         return callGemini(prompt);
     }
 
+    public AiAutofillInvoiceResponse autofillInvoice(String userPrompt) {
+        logger.info("[AUTOFILL AI] User Input: {}", userPrompt);
+
+        String systemPrompt = "You are a strict, precise INFORMATION EXTRACTOR for an enterprise invoice management system.\n" +
+                "Your task is ONLY to extract explicit invoice facts provided in the user text into JSON format.\n\n" +
+                "CRITICAL RULES:\n" +
+                "1. NEVER GUESS, HALLUCINATE, OR INVENT DATA.\n" +
+                "2. Only extract values EXPLICITLY STATED in the input text.\n" +
+                "3. If a text field (clientName, issueDate, dueDate, notes, terms) is NOT explicitly present in the input text, set its value to null.\n" +
+                "4. For numeric fields (price, taxPercent, discountPercent), if NOT explicitly specified, set to 0.0.\n" +
+                "5. For quantity, if NOT explicitly specified, set to 1.0.\n" +
+                "6. Dates must be formatted as YYYY-MM-DD ONLY if explicitly specified in text, otherwise set to null.\n" +
+                "7. Return ONLY valid JSON matching this schema exactly:\n" +
+                "{\n" +
+                "  \"clientName\": null,\n" +
+                "  \"issueDate\": null,\n" +
+                "  \"dueDate\": null,\n" +
+                "  \"items\": [\n" +
+                "    {\n" +
+                "      \"description\": \"\",\n" +
+                "      \"quantity\": 1.0,\n" +
+                "      \"price\": 0.0,\n" +
+                "      \"taxPercent\": 0.0,\n" +
+                "      \"discountPercent\": 0.0\n" +
+                "    }\n" +
+                "  ],\n" +
+                "  \"notes\": null,\n" +
+                "  \"terms\": null\n" +
+                "}\n\n" +
+                "User Input Text:\n" + userPrompt;
+
+        logger.info("[AUTOFILL AI] Prompt Sent to Gemini:\n{}", systemPrompt);
+
+        String rawResponse = callGemini(systemPrompt);
+        logger.info("[AUTOFILL AI] Raw Gemini Response:\n{}", rawResponse);
+
+        try {
+            AiAutofillInvoiceResponse response = objectMapper.readValue(rawResponse, AiAutofillInvoiceResponse.class);
+            logger.info("[AUTOFILL AI] Parsed JSON: Client='{}', ItemsCount={}, IssueDate='{}', DueDate='{}'",
+                    response.getClientName(),
+                    response.getItems() != null ? response.getItems().size() : 0,
+                    response.getIssueDate(),
+                    response.getDueDate());
+            return response;
+        } catch (Exception e) {
+            logger.error("[AUTOFILL AI] Failed to parse JSON response from Gemini", e);
+            return new AiAutofillInvoiceResponse(null, null, null, List.of(), null, null);
+        }
+    }
+
     public String suggestItems(String inputPrompt) {
-        String prompt = "You are an AI Invoice assistant. The user will provide a rough description of services or products they provided. " +
-                "You must extract this into a structured JSON array of line items. " +
-                "Each item must have: 'description' (string, professional), 'quantity' (number), 'unitPrice' (number, guess a reasonable market price in USD if not provided), 'taxRate' (number, standard 0 or 5 or 10 based on standard services), 'discount' (number, 0). " +
-                "Return ONLY valid JSON array. Do not return any other text. \n\nUser Input: " + inputPrompt;
+        String prompt = "You are an AI Invoice assistant. Extract explicit facts into JSON items array. " +
+                "Each item: 'description', 'quantity', 'unitPrice' (0 if not specified), 'taxRate' (0 if not specified), 'discount' (0). " +
+                "Do NOT guess prices or tax rates. Return ONLY valid JSON array.\n\nUser Input: " + inputPrompt;
         
         return callGemini(prompt);
     }

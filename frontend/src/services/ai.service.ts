@@ -26,7 +26,27 @@ export interface AiCashFlowPrediction {
   reasoning: string;
 }
 
+export interface AiAutofillResponse {
+  clientName?: string;
+  issueDate?: string;
+  dueDate?: string;
+  items?: Array<{
+    description: string;
+    quantity: number;
+    price: number;
+    taxPercent: number;
+    discountPercent: number;
+  }>;
+  notes?: string;
+  terms?: string;
+}
+
 export const aiService = {
+  autofillInvoice: async (prompt: string): Promise<AiAutofillResponse> => {
+    const response = await api.post<AiAutofillResponse>('/ai/autofill-invoice', { prompt });
+    return response.data;
+  },
+
   suggestItems: async (prompt: string): Promise<InvoiceItem[]> => {
     const response = await api.post('/ai/suggest-items', { prompt });
     if (typeof response.data === 'string') {

@@ -9,6 +9,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
+import { toast } from 'sonner';
 import { invoiceService } from '../../services/invoice.service';
 import { clientService } from '../../services/client.service';
 import { aiService } from '../../services/ai.service';
@@ -31,7 +32,7 @@ export const InvoiceBuilderPage = () => {
   const [isAiLoading, setIsAiLoading] = useState(false);
   const [enhancingField, setEnhancingField] = useState<'notes' | 'terms' | null>(null);
 
-  const { register, control, handleSubmit, reset, watch, formState: { errors, isSubmitting } } = useForm<InvoiceRequest>({
+  const { register, control, handleSubmit, reset, setValue, watch, formState: { errors, isSubmitting } } = useForm<InvoiceRequest>({
     defaultValues: {
       issueDate: new Date().toISOString().split('T')[0],
       dueDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
@@ -120,21 +121,30 @@ export const InvoiceBuilderPage = () => {
     if (!aiPrompt.trim()) return;
     setIsAiLoading(true);
     try {
-      const items = await aiService.suggestItems(aiPrompt);
-      if (items && items.length > 0) {
-        // Clear empty rows if needed, or just append
-        items.forEach(item => append({
-          description: item.description || '',
-          quantity: item.quantity || 1,
-          unitPrice: item.unitPrice || 0,
-          taxRate: item.taxRate || 0,
-          discount: item.discount || 0
-        }));
+      const data = await aiService.autofillInvoice(aiPrompt);
+      
+      if (data) {
+        if (data.issueDate) setValue('issueDate', data.issueDate);
+        if (data.dueDate) setValue('dueDate', data.dueDate);
+        if (data.notes) setValue('notes', data.notes);
+        if (data.terms) setValue('terms', data.terms);
+
+        if (data.items && data.items.length > 0) {
+          data.items.forEach(item => append({
+            description: item.description || '',
+            quantity: item.quantity || 1,
+            unitPrice: item.price || 0,
+            taxRate: item.taxPercent || 0,
+            discount: item.discountPercent || 0
+          }));
+        }
+
+        toast.success("AI extracted invoice facts successfully!");
         setAiPrompt('');
         setIsAiModalOpen(false);
       }
     } catch (err) {
-      alert("Failed to generate items from AI.");
+      toast.error("Failed to extract invoice facts from AI.");
     } finally {
       setIsAiLoading(false);
     }

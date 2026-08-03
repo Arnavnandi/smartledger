@@ -22,6 +22,11 @@ public class AiController {
         return ResponseEntity.ok(aiService.suggestItems(request.getPrompt()));
     }
 
+    @PostMapping("/autofill-invoice")
+    public ResponseEntity<AiAutofillInvoiceResponse> autofillInvoice(@RequestBody AiPromptRequest request) {
+        return ResponseEntity.ok(aiService.autofillInvoice(request.getPrompt()));
+    }
+
     @PostMapping("/enhance-text")
     public ResponseEntity<AiResponse> enhanceText(@RequestBody AiPromptRequest request) {
         return ResponseEntity.ok(new AiResponse(aiService.enhanceDescription(request.getPrompt())));
