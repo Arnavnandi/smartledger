@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import type { FormEvent } from 'react';
 import { useSearchParams, Link, useNavigate } from 'react-router-dom';
 import { authService } from '../../services/auth.service';
@@ -10,7 +10,8 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 
 export const ResetPasswordPage = () => {
   const [searchParams] = useSearchParams();
-  const token = searchParams.get('token');
+  const rawToken = searchParams.get('token');
+  const token = rawToken ? rawToken.trim() : null;
   const navigate = useNavigate();
 
   const [password, setPassword] = useState('');
@@ -18,11 +19,19 @@ export const ResetPasswordPage = () => {
   const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
   const [message, setMessage] = useState('');
 
+  useEffect(() => {
+    console.log('[RESET PASSWORD PAGE MOUNT] Received token from URL query string:', token);
+    if (!token) {
+      setStatus('error');
+      setMessage('Invalid or missing password reset link. Please request a new link from the login page.');
+    }
+  }, [token]);
+
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     if (!token) {
       setStatus('error');
-      setMessage('Missing reset token.');
+      setMessage('Missing reset token. Please check your reset email link.');
       return;
     }
     if (password !== confirmPassword) {
@@ -37,12 +46,14 @@ export const ResetPasswordPage = () => {
     }
 
     setStatus('loading');
+    console.log('[RESET PASSWORD SUBMIT] Sending POST /api/auth/reset-password with token:', token);
     try {
       const res = await authService.resetPassword(token, password);
       setStatus('success');
       setMessage(res.message);
       setTimeout(() => navigate('/login'), 3000);
     } catch (err: any) {
+      console.error('[RESET PASSWORD SUBMIT ERROR]', err);
       setStatus('error');
       setMessage(err.response?.data?.message || 'Failed to reset password.');
     }

@@ -86,14 +86,25 @@ public class AuthService {
                 .orElseThrow(() -> new RuntimeException("User not found with this email"));
         long tLookup = System.currentTimeMillis();
 
-        verificationTokenRepository.findByUser(user).ifPresent(verificationTokenRepository::delete);
+        String rawToken = UUID.randomUUID().toString();
 
-        String token = UUID.randomUUID().toString();
-        VerificationToken verificationToken = new VerificationToken(token, user, LocalDateTime.now().plusHours(1));
-        verificationTokenRepository.save(verificationToken);
+        // Upsert token to eliminate Hibernate delete-before-insert flush order race conditions
+        VerificationToken verificationToken = verificationTokenRepository.findByUser(user)
+                .orElseGet(() -> {
+                    VerificationToken vt = new VerificationToken();
+                    vt.setUser(user);
+                    return vt;
+                });
+
+        verificationToken.setToken(rawToken);
+        verificationToken.setExpiryDate(LocalDateTime.now().plusHours(1));
+        verificationTokenRepository.saveAndFlush(verificationToken);
         long tTokenSave = System.currentTimeMillis();
 
-        emailService.sendPasswordResetEmail(user.getEmail(), token);
+        logger.info("[FORGOT PASSWORD TOKEN GENERATED] User Email: '{}', Token: '{}', Expiry: '{}'", 
+                user.getEmail(), rawToken, verificationToken.getExpiryDate());
+
+        emailService.sendPasswordResetEmail(user.getEmail(), rawToken);
         long tAsyncDispatch = System.currentTimeMillis();
 
         logger.info("[FORGOT PASSWORD PERFORMANCE] ColdStart: {}, TotalSyncMs: {}ms (LookupMs: {}ms, TokenSaveMs: {}ms, AsyncDispatchTriggerMs: {}ms)",
@@ -106,17 +117,35 @@ public class AuthService {
 
     @Transactional
     public void resetPassword(String token, String newPassword) {
-        VerificationToken verificationToken = verificationTokenRepository.findByToken(token)
-                .orElseThrow(() -> new RuntimeException("Invalid token"));
+        if (token == null || token.trim().isEmpty()) {
+            logger.error("[RESET PASSWORD VALIDATION ERROR] Provided token is null or empty");
+            throw new RuntimeException("Invalid token");
+        }
+
+        String cleanToken = token.trim();
+        logger.info("[RESET PASSWORD VALIDATION] Looking up token: '{}'", cleanToken);
+
+        VerificationToken verificationToken = verificationTokenRepository.findByToken(cleanToken)
+                .orElseThrow(() -> {
+                    logger.error("[RESET PASSWORD VALIDATION ERROR] Token '{}' was NOT FOUND in database verification_tokens table", cleanToken);
+                    return new RuntimeException("Invalid token");
+                });
 
         if (verificationToken.getExpiryDate().isBefore(LocalDateTime.now())) {
+            logger.error("[RESET PASSWORD VALIDATION ERROR] Token '{}' expired at {} (Current System Time: {})", 
+                    cleanToken, verificationToken.getExpiryDate(), LocalDateTime.now());
             throw new RuntimeException("Token has expired");
         }
 
         User user = verificationToken.getUser();
+        logger.info("[RESET PASSWORD SUCCESS] Valid token matched for user '{}'. Updating password.", user.getEmail());
+
         user.setPassword(passwordEncoder.encode(newPassword));
         userRepository.save(user);
 
-        verificationTokenRepository.deleteByUser(user);
+        verificationTokenRepository.delete(verificationToken);
+        verificationTokenRepository.flush();
+
+        auditLogService.logAction(user.getEmail(), "PASSWORD_RESET_SUCCESS", "User", user.getId().toString(), "Password reset successfully via email link.");
     }
 }
