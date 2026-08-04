@@ -20,12 +20,15 @@ export const ResetPasswordPage = () => {
   const [message, setMessage] = useState('');
 
   useEffect(() => {
-    console.log('[RESET PASSWORD PAGE MOUNT] Received token from URL query string:', token);
+    console.log('[DEBUG RESET PAGE] window.location.href:', window.location.href);
+    console.log('[DEBUG RESET PAGE] window.location.search:', window.location.search);
+    console.log('[DEBUG RESET PAGE] Extracted rawToken from URL:', rawToken);
+    console.log('[DEBUG RESET PAGE] Cleaned token:', token);
     if (!token) {
       setStatus('error');
       setMessage('Invalid or missing password reset link. Please request a new link from the login page.');
     }
-  }, [token]);
+  }, [token, rawToken]);
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -46,14 +49,15 @@ export const ResetPasswordPage = () => {
     }
 
     setStatus('loading');
-    console.log('[RESET PASSWORD SUBMIT] Sending POST /api/auth/reset-password with token:', token);
+    console.log('[DEBUG RESET SUBMIT] POST payload:', { token, newPassword: '***' });
     try {
       const res = await authService.resetPassword(token, password);
+      console.log('[DEBUG RESET SUCCESS] Server response:', res);
       setStatus('success');
       setMessage(res.message);
       setTimeout(() => navigate('/login'), 3000);
     } catch (err: any) {
-      console.error('[RESET PASSWORD SUBMIT ERROR]', err);
+      console.error('[DEBUG RESET ERROR] Exception response:', err.response?.data);
       setStatus('error');
       setMessage(err.response?.data?.message || 'Failed to reset password.');
     }

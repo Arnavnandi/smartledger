@@ -117,28 +117,38 @@ public class AuthService {
 
     @Transactional
     public void resetPassword(String token, String newPassword) {
+        logger.info("[RESET PASSWORD API CALLED] Raw received token: '{}', NewPassword length: {}", token, newPassword != null ? newPassword.length() : 0);
+
         if (token == null || token.trim().isEmpty()) {
-            logger.error("[RESET PASSWORD VALIDATION ERROR] Provided token is null or empty");
+            logger.error("[RESET PASSWORD FAILURE REASON: TOKEN_NULL_OR_EMPTY] Provided token parameter is null or empty");
             throw new RuntimeException("Invalid token");
         }
 
         String cleanToken = token.trim();
-        logger.info("[RESET PASSWORD VALIDATION] Looking up token: '{}'", cleanToken);
+        logger.info("[RESET PASSWORD REPOSITORY QUERY] Executing verificationTokenRepository.findByToken('{}')", cleanToken);
 
-        VerificationToken verificationToken = verificationTokenRepository.findByToken(cleanToken)
-                .orElseThrow(() -> {
-                    logger.error("[RESET PASSWORD VALIDATION ERROR] Token '{}' was NOT FOUND in database verification_tokens table", cleanToken);
-                    return new RuntimeException("Invalid token");
-                });
+        Optional<VerificationToken> tokenOptional = verificationTokenRepository.findByToken(cleanToken);
 
-        if (verificationToken.getExpiryDate().isBefore(LocalDateTime.now())) {
-            logger.error("[RESET PASSWORD VALIDATION ERROR] Token '{}' expired at {} (Current System Time: {})", 
-                    cleanToken, verificationToken.getExpiryDate(), LocalDateTime.now());
+        if (tokenOptional.isEmpty()) {
+            long totalTokensInDb = verificationTokenRepository.count();
+            logger.error("[RESET PASSWORD FAILURE REASON: TOKEN_NOT_FOUND_IN_DB] Received token '{}' did not match any row in verification_tokens table (Total active tokens in DB: {})", cleanToken, totalTokensInDb);
+            throw new RuntimeException("Invalid token");
+        }
+
+        VerificationToken verificationToken = tokenOptional.get();
+        LocalDateTime now = LocalDateTime.now();
+
+        logger.info("[RESET PASSWORD DB MATCH FOUND] Stored Token: '{}', Received Token: '{}', Matches: {}, Expiry: '{}', Server Time: '{}'",
+                verificationToken.getToken(), cleanToken, verificationToken.getToken().equals(cleanToken), verificationToken.getExpiryDate(), now);
+
+        if (verificationToken.getExpiryDate().isBefore(now)) {
+            logger.error("[RESET PASSWORD FAILURE REASON: TOKEN_EXPIRED] Token '{}' expired at {} (Current Server Time: {})", 
+                    cleanToken, verificationToken.getExpiryDate(), now);
             throw new RuntimeException("Token has expired");
         }
 
         User user = verificationToken.getUser();
-        logger.info("[RESET PASSWORD SUCCESS] Valid token matched for user '{}'. Updating password.", user.getEmail());
+        logger.info("[RESET PASSWORD VALIDATION PASSED] Token matched for user ID {} ({})", user.getId(), user.getEmail());
 
         user.setPassword(passwordEncoder.encode(newPassword));
         userRepository.save(user);
@@ -146,6 +156,7 @@ public class AuthService {
         verificationTokenRepository.delete(verificationToken);
         verificationTokenRepository.flush();
 
+        logger.info("[RESET PASSWORD COMPLETED SUCCESSFULLY] Password updated and token deleted for user '{}'", user.getEmail());
         auditLogService.logAction(user.getEmail(), "PASSWORD_RESET_SUCCESS", "User", user.getId().toString(), "Password reset successfully via email link.");
     }
 }
