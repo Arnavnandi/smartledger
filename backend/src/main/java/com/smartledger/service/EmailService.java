@@ -44,27 +44,41 @@ public class EmailService {
     public EmailService(ObjectMapper objectMapper) {
         this.objectMapper = objectMapper;
         this.httpClient = HttpClient.newBuilder()
-                .connectTimeout(Duration.ofSeconds(10))
+                .connectTimeout(Duration.ofSeconds(5))
                 .build();
     }
 
+    @Async
     public void sendVerificationEmail(String to, String token) {
+        long start = System.currentTimeMillis();
         String subject = "Verify your email - SmartLedger";
         String html = "<h3>Welcome to SmartLedger!</h3>" +
                 "<p>Please verify your email address by clicking the link below:</p>" +
                 "<p><a href=\"" + frontendUrl + "/verify-email?token=" + token + "\">Verify Email</a></p>" +
                 "<br/><p>If you did not request this, please ignore this email.</p>";
 
-        dispatchEmail(to, subject, html, null);
+        try {
+            dispatchEmail(to, subject, html, null);
+            logger.info("[ASYNC VERIFICATION EMAIL] Dispatched to {} in {}ms", to, System.currentTimeMillis() - start);
+        } catch (Exception ex) {
+            logger.error("[ASYNC VERIFICATION EMAIL FAILED] Recipient: {}", to, ex);
+        }
     }
 
+    @Async
     public void sendPasswordResetEmail(String to, String token) {
+        long start = System.currentTimeMillis();
         String subject = "Password Reset - SmartLedger";
         String html = "<h3>Password Reset Request</h3>" +
                 "<p>To reset your password, click the link below:</p>" +
                 "<p><a href=\"" + frontendUrl + "/reset-password?token=" + token + "\">Reset Password</a></p>";
 
-        dispatchEmail(to, subject, html, null);
+        try {
+            dispatchEmail(to, subject, html, null);
+            logger.info("[ASYNC RESET EMAIL] Dispatched to {} in {}ms", to, System.currentTimeMillis() - start);
+        } catch (Exception ex) {
+            logger.error("[ASYNC RESET EMAIL FAILED] Recipient: {}", to, ex);
+        }
     }
 
     @Async
@@ -184,21 +198,23 @@ public class EmailService {
 
             String jsonPayload = objectMapper.writeValueAsString(bodyMap);
 
+            long apiStart = System.currentTimeMillis();
             HttpRequest request = HttpRequest.newBuilder()
                     .uri(URI.create(BREVO_API_URL))
                     .header("api-key", brevoApiKey.trim())
                     .header("accept", "application/json")
                     .header("content-type", "application/json")
-                    .timeout(Duration.ofSeconds(15))
+                    .timeout(Duration.ofSeconds(10))
                     .POST(HttpRequest.BodyPublishers.ofString(jsonPayload))
                     .build();
 
             HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+            long apiDuration = System.currentTimeMillis() - apiStart;
 
             if (response.statusCode() >= 200 && response.statusCode() < 300) {
-                logger.info("Successfully delivered email to {} via Brevo API (Status: {})", to, response.statusCode());
+                logger.info("Successfully delivered email to {} via Brevo API in {}ms (Status: {})", to, apiDuration, response.statusCode());
             } else {
-                logger.error("Brevo API rejected email to {}. Status: {}, Response: {}", to, response.statusCode(), response.body());
+                logger.error("Brevo API rejected email to {} after {}ms. Status: {}, Response: {}", to, apiDuration, response.statusCode(), response.body());
                 throw new EmailDeliveryException("Failed to send email to " + to + " via Brevo (Status: " + response.statusCode() + "). " + response.body());
             }
         } catch (EmailDeliveryException ede) {

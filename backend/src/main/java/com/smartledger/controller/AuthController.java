@@ -92,9 +92,14 @@ public class AuthController {
                 .orElseThrow(() -> new RuntimeException("Refresh token is not in database!"));
     }
 
+    private static final org.slf4j.Logger logger = org.slf4j.LoggerFactory.getLogger(AuthController.class);
+
     @PostMapping("/forgot-password")
     public ResponseEntity<?> forgotPassword(@Valid @RequestBody ForgotPasswordRequest request) {
+        long t0 = System.currentTimeMillis();
         authService.processForgotPassword(request.getEmail());
+        long totalMs = System.currentTimeMillis() - t0;
+        logger.info("[AUTH CONTROLLER FORGOT-PASSWORD] Synchronous response returned to client in {}ms", totalMs);
         return ResponseEntity.ok(new ApiResponse(true, "If the email exists, a password reset link has been sent."));
     }
 

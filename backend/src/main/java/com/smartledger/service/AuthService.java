@@ -74,18 +74,34 @@ public class AuthService {
         auditLogService.logAction(user.getEmail(), "USER_VERIFIED", "User", user.getId().toString(), "User email verified successfully.");
     }
 
+    private static final org.slf4j.Logger logger = org.slf4j.LoggerFactory.getLogger(AuthService.class);
+
     @Transactional
     public void processForgotPassword(String email) {
+        long tStart = System.currentTimeMillis();
+        long uptime = java.lang.management.ManagementFactory.getRuntimeMXBean().getUptime();
+        boolean isColdStart = uptime < 45000;
+
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("User not found with this email"));
+        long tLookup = System.currentTimeMillis();
 
         verificationTokenRepository.findByUser(user).ifPresent(verificationTokenRepository::delete);
 
         String token = UUID.randomUUID().toString();
         VerificationToken verificationToken = new VerificationToken(token, user, LocalDateTime.now().plusHours(1));
         verificationTokenRepository.save(verificationToken);
+        long tTokenSave = System.currentTimeMillis();
 
         emailService.sendPasswordResetEmail(user.getEmail(), token);
+        long tAsyncDispatch = System.currentTimeMillis();
+
+        logger.info("[FORGOT PASSWORD PERFORMANCE] ColdStart: {}, TotalSyncMs: {}ms (LookupMs: {}ms, TokenSaveMs: {}ms, AsyncDispatchTriggerMs: {}ms)",
+                isColdStart,
+                (tAsyncDispatch - tStart),
+                (tLookup - tStart),
+                (tTokenSave - tLookup),
+                (tAsyncDispatch - tTokenSave));
     }
 
     @Transactional
