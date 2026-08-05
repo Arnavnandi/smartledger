@@ -166,9 +166,10 @@ export const ClientsListPage = () => {
                     </DropdownMenu>
                   </TableCell>
                 </TableRow>
-              ))
-            )}
-          </TableBody>
+              );
+            })
+          )}
+        </TableBody>
         </Table>
       </div>
       
