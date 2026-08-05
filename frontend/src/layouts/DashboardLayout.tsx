@@ -338,17 +338,17 @@ export const DashboardLayout = () => {
                   </div>
 
                   <div className="py-1 space-y-0.5">
-                    {/* My Profile (Disabled - Coming Soon) */}
+                    {/* My Profile */}
                     <button
                       type="button"
-                      disabled
-                      className="w-full text-left cursor-not-allowed opacity-50 text-xs flex items-center justify-between p-2 rounded-xl text-slate-400 dark:text-slate-500"
+                      onClick={() => {
+                        setUserMenuOpen(false);
+                        navigate('/profile');
+                      }}
+                      className="w-full text-left cursor-pointer text-xs flex items-center gap-2 p-2 rounded-xl hover:bg-indigo-50 dark:hover:bg-slate-800/80 text-slate-700 dark:text-slate-200 font-medium transition-colors"
                     >
-                      <div className="flex items-center gap-2">
-                        <UserIcon className="w-3.5 h-3.5 text-indigo-400" />
-                        <span>My Profile</span>
-                      </div>
-                      <span className="text-[9px] font-semibold bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 px-1.5 py-0.5 rounded-md border border-slate-200 dark:border-slate-700">Coming Soon</span>
+                      <UserIcon className="w-3.5 h-3.5 text-indigo-500" />
+                      <span>My Profile</span>
                     </button>
 
                     {/* Settings */}

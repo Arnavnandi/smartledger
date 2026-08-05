@@ -33,6 +33,9 @@ public class User {
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
+    @Column(name = "phone_number")
+    private String phoneNumber;
+
     @PrePersist
     protected void onCreate() {
         this.createdAt = LocalDateTime.now();
@@ -55,4 +58,6 @@ public class User {
     public boolean isEmailVerified() { return isEmailVerified; }
     public void setEmailVerified(boolean emailVerified) { isEmailVerified = emailVerified; }
     public LocalDateTime getCreatedAt() { return createdAt; }
+    public String getPhoneNumber() { return phoneNumber; }
+    public void setPhoneNumber(String phoneNumber) { this.phoneNumber = phoneNumber; }
 }

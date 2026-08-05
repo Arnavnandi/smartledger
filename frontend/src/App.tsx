@@ -7,6 +7,7 @@ import { ProtectedRoute } from './components/shared/ProtectedRoute';
 import { DashboardLayout } from './layouts/DashboardLayout';
 import { DashboardPage } from './pages/dashboard/DashboardPage';
 import { CompanySettingsPage } from './pages/dashboard/CompanySettingsPage';
+import { ProfilePage } from './pages/dashboard/ProfilePage';
 import { ClientsListPage } from './pages/clients/ClientsListPage';
 import { ClientFormPage } from './pages/clients/ClientFormPage';
 import { ClientDetailsPage } from './pages/clients/ClientDetailsPage';
@@ -48,6 +49,7 @@ const AppRoutes = () => {
       <Route element={<ProtectedRoute />}>
         <Route element={<DashboardLayout />}>
           <Route path="/dashboard" element={<DashboardPage />} />
+          <Route path="/profile" element={<ProfilePage />} />
           <Route path="/settings" element={<CompanySettingsPage />} />
           <Route path="/clients" element={<ClientsListPage />} />
           <Route path="/clients/new" element={<ClientFormPage />} />

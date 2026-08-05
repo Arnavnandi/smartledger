@@ -15,15 +15,17 @@ public class CustomUserDetails implements UserDetails {
     private String password;
     private String firstName;
     private String lastName;
+    private String phoneNumber;
     private boolean isEmailVerified;
     private Collection<? extends GrantedAuthority> authorities;
 
-    public CustomUserDetails(Long id, String email, String password, String firstName, String lastName, boolean isEmailVerified, Collection<? extends GrantedAuthority> authorities) {
+    public CustomUserDetails(Long id, String email, String password, String firstName, String lastName, String phoneNumber, boolean isEmailVerified, Collection<? extends GrantedAuthority> authorities) {
         this.id = id;
         this.email = email;
         this.password = password;
         this.firstName = firstName;
         this.lastName = lastName;
+        this.phoneNumber = phoneNumber;
         this.isEmailVerified = isEmailVerified;
         this.authorities = authorities;
     }
@@ -37,6 +39,7 @@ public class CustomUserDetails implements UserDetails {
                 user.getPassword(),
                 user.getFirstName(),
                 user.getLastName(),
+                user.getPhoneNumber(),
                 user.isEmailVerified(),
                 Collections.singletonList(authority)
         );
@@ -45,6 +48,7 @@ public class CustomUserDetails implements UserDetails {
     public Long getId() { return id; }
     public String getFirstName() { return firstName; }
     public String getLastName() { return lastName; }
+    public String getPhoneNumber() { return phoneNumber; }
     
     public boolean isEmailVerified() {
         return isEmailVerified;
