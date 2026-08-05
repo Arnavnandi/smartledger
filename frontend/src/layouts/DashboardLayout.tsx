@@ -3,6 +3,7 @@ import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useCompany } from '../context/CompanyContext';
 import { Button } from '@/components/ui/button';
+import { toast } from 'sonner';
 import { 
   LayoutDashboard, 
   FileText, 
@@ -21,7 +22,6 @@ import {
   ChevronRight,
   Search,
   User as UserIcon,
-  Building2,
   Command as CommandIcon,
   Activity
 } from 'lucide-react';
@@ -154,7 +154,7 @@ export const DashboardLayout = () => {
 
   const UserAvatarDropdown = () => (
     <DropdownMenu>
-      <DropdownMenuTrigger className="flex items-center gap-2 outline-none">
+      <DropdownMenuTrigger className="flex items-center gap-2 outline-none cursor-pointer">
         <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-indigo-600 to-violet-600 border border-indigo-400/40 flex items-center justify-center text-xs font-bold text-white shadow-sm hover:opacity-95 transition-all">
           {userInitials}
         </div>
@@ -165,15 +165,21 @@ export const DashboardLayout = () => {
           <p className="text-[10px] text-slate-500 dark:text-slate-400 truncate mt-0.5">{company?.name || 'SmartLedger User'}</p>
         </DropdownMenuLabel>
         <DropdownMenuSeparator className="bg-slate-200 dark:bg-slate-700" />
-        <DropdownMenuItem onClick={() => navigate('/settings')} className="cursor-pointer text-xs flex items-center gap-2 p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700/60">
-          <Building2 className="w-3.5 h-3.5 text-indigo-500" /> Company Settings
+        <DropdownMenuItem 
+          onClick={() => toast.info('User profile management coming soon!')}
+          className="cursor-pointer text-xs flex items-center justify-between p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700/60"
+        >
+          <div className="flex items-center gap-2">
+            <UserIcon className="w-3.5 h-3.5 text-indigo-500" /> My Profile
+          </div>
+          <span className="text-[9px] font-semibold bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 px-1.5 py-0.5 rounded border border-indigo-200 dark:border-indigo-800/60">Coming Soon</span>
         </DropdownMenuItem>
         <DropdownMenuItem onClick={() => navigate('/settings')} className="cursor-pointer text-xs flex items-center gap-2 p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700/60">
-          <UserIcon className="w-3.5 h-3.5 text-indigo-500" /> My Profile
+          <Settings className="w-3.5 h-3.5 text-indigo-500" /> Settings
         </DropdownMenuItem>
         <DropdownMenuSeparator className="bg-slate-200 dark:bg-slate-700" />
         <DropdownMenuItem onClick={logout} className="cursor-pointer text-xs flex items-center gap-2 p-2 rounded-lg text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40">
-          <LogOut className="w-3.5 h-3.5" /> Sign Out
+          <LogOut className="w-3.5 h-3.5" /> Logout
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
@@ -241,13 +247,17 @@ export const DashboardLayout = () => {
         {/* User Footer Profile */}
         <div className="p-3 border-t border-slate-200 dark:border-slate-800/80 bg-slate-100/60 dark:bg-slate-900/60">
           <div className={`flex items-center ${sidebarCollapsed ? 'justify-center p-1' : 'justify-between p-2'} rounded-xl bg-white dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700/40`}>
-            <div className="flex items-center space-x-3 overflow-hidden">
-              <div className="w-8 h-8 rounded-lg bg-indigo-500/20 border border-indigo-500/40 flex items-center justify-center text-xs font-bold text-indigo-600 dark:text-indigo-400 shrink-0">
+            <div 
+              onClick={() => navigate('/settings')}
+              className="flex items-center space-x-3 overflow-hidden cursor-pointer group"
+              title="Manage Settings"
+            >
+              <div className="w-8 h-8 rounded-lg bg-indigo-500/20 border border-indigo-500/40 flex items-center justify-center text-xs font-bold text-indigo-600 dark:text-indigo-400 shrink-0 group-hover:bg-indigo-500/30 transition-colors">
                 {userInitials}
               </div>
               {!sidebarCollapsed && (
                 <div className="truncate">
-                  <p className="text-xs font-semibold text-slate-800 dark:text-slate-200 truncate">{user?.username}</p>
+                  <p className="text-xs font-semibold text-slate-800 dark:text-slate-200 truncate group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">{user?.username}</p>
                   <p className="text-[10px] text-slate-500 dark:text-slate-400 truncate">Account Active</p>
                 </div>
               )}

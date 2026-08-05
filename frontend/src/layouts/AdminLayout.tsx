@@ -4,6 +4,14 @@ import { ShieldAlert, Users, Building2, ScrollText, LogOut } from 'lucide-react'
 import { Button } from '@/components/ui/button';
 
 import { ThemeToggle } from '../components/shared/ThemeToggle';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  DropdownMenuSeparator,
+  DropdownMenuLabel
+} from '@/components/ui/dropdown-menu';
 
 export const AdminLayout = () => {
   const { user, logout } = useAuth();
@@ -76,9 +84,23 @@ export const AdminLayout = () => {
           <h1 className="text-xl font-semibold">Super Admin Console</h1>
           <div className="flex items-center space-x-4">
             <ThemeToggle />
-            <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center text-white font-bold">
-              {user?.firstName?.charAt(0)}{user?.lastName?.charAt(0)}
-            </div>
+            <DropdownMenu>
+              <DropdownMenuTrigger className="outline-none cursor-pointer">
+                <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center text-white font-bold hover:opacity-90 transition-opacity">
+                  {user?.firstName?.charAt(0)}{user?.lastName?.charAt(0)}
+                </div>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-48 bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100 shadow-xl rounded-xl p-1">
+                <DropdownMenuLabel className="px-3 py-2 text-xs">
+                  <p className="font-bold truncate">{user?.username}</p>
+                  <p className="text-[10px] text-blue-400 font-semibold uppercase">Super Admin</p>
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator className="bg-slate-200 dark:bg-slate-700" />
+                <DropdownMenuItem onClick={logout} className="cursor-pointer text-xs flex items-center gap-2 p-2 rounded-lg text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40">
+                  <LogOut className="w-3.5 h-3.5" /> Sign Out
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </header>
 
