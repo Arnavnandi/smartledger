@@ -33,7 +33,11 @@ export const LoginPage = () => {
       toast.success('Welcome back to SmartLedger!');
       navigate(from, { replace: true });
     } catch (err: any) {
-      toast.error(err.response?.data?.message || 'Login failed. Please check credentials.');
+      const serverMsg = err?.response?.data?.message;
+      const userFriendlyMsg = (!serverMsg || serverMsg === 'Bad credentials')
+        ? 'Invalid email address or password. Please try again.'
+        : serverMsg;
+      toast.error(userFriendlyMsg);
     }
   };
 

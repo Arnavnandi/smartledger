@@ -57,7 +57,8 @@ public class AuthController {
             return ResponseEntity.ok(new JwtAuthenticationResponse(jwt, refreshToken.getToken()));
         } catch (org.springframework.security.core.AuthenticationException e) {
             loginAttempts.put(email, attempts + 1);
-            throw e;
+            return org.springframework.http.ResponseEntity.status(org.springframework.http.HttpStatus.UNAUTHORIZED)
+                    .body(new ApiResponse(false, "Invalid email address or password. Please try again."));
         }
     }
 
