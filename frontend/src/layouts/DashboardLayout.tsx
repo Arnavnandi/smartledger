@@ -218,9 +218,9 @@ export const DashboardLayout = () => {
       </aside>
 
       {/* Main Content Area */}
-      <main className="flex-1 flex flex-col h-screen overflow-hidden bg-slate-50 dark:bg-slate-950 transition-colors duration-300">
+      <main className="flex-1 flex flex-col h-screen overflow-hidden bg-slate-50 dark:bg-slate-950 transition-colors duration-300 relative">
         {/* Top Header */}
-        <header className="h-16 px-4 md:px-6 border-b border-slate-200 dark:border-slate-800/80 bg-white/80 dark:bg-slate-900/40 backdrop-blur-xl flex justify-between items-center shrink-0 transition-colors duration-300 gap-4">
+        <header className="relative z-50 h-16 px-4 md:px-6 border-b border-slate-200 dark:border-slate-800/80 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl flex justify-between items-center shrink-0 transition-colors duration-300 gap-4">
           {/* Mobile Menu Button & Brand */}
           <div className="flex items-center gap-3 md:hidden">
             <Button 
@@ -276,7 +276,7 @@ export const DashboardLayout = () => {
                   <span className="absolute top-2 right-2 w-2 h-2 bg-rose-500 rounded-full animate-pulse shadow-glow-rose"></span>
                 )}
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-80 max-h-96 overflow-y-auto bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100 shadow-2xl rounded-xl p-0">
+              <DropdownMenuContent align="end" className="w-80 max-h-96 overflow-y-auto bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100 shadow-2xl rounded-xl p-0 z-[100]">
                 <div className="flex justify-between items-center p-3 border-b border-slate-200 dark:border-slate-700/80 bg-slate-50 dark:bg-slate-800/90 backdrop-blur">
                   <h3 className="font-semibold text-xs tracking-wider uppercase text-slate-600 dark:text-slate-300">Notifications</h3>
                   {unreadCount > 0 && (
@@ -331,7 +331,7 @@ export const DashboardLayout = () => {
               </button>
 
               {userMenuOpen && (
-                <div className="absolute right-0 mt-2 w-56 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-800 dark:text-slate-100 shadow-2xl rounded-2xl p-1.5 z-50 animate-in fade-in-0 zoom-in-95 duration-150">
+                <div className="absolute right-0 mt-2 w-56 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100 shadow-2xl rounded-2xl p-1.5 z-[100] animate-in fade-in-0 zoom-in-95 duration-150">
                   <div className="px-3 py-2 border-b border-slate-100 dark:border-slate-800">
                     <p className="text-xs font-bold text-slate-900 dark:text-white truncate">{user?.username}</p>
                     <p className="text-[10px] text-slate-500 dark:text-slate-400 truncate mt-0.5">{company?.name || 'SmartLedger Workspace'}</p>
@@ -345,7 +345,7 @@ export const DashboardLayout = () => {
                         setUserMenuOpen(false);
                         navigate('/profile');
                       }}
-                      className="w-full text-left cursor-pointer text-xs flex items-center gap-2 p-2 rounded-xl hover:bg-indigo-50 dark:hover:bg-slate-800/80 text-slate-700 dark:text-slate-200 font-medium transition-colors"
+                      className="w-full text-left cursor-pointer text-xs flex items-center gap-2 p-2 rounded-xl hover:bg-indigo-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 font-medium transition-colors"
                     >
                       <UserIcon className="w-3.5 h-3.5 text-indigo-500" />
                       <span>My Profile</span>
@@ -358,7 +358,7 @@ export const DashboardLayout = () => {
                         setUserMenuOpen(false);
                         navigate('/settings');
                       }}
-                      className="w-full text-left cursor-pointer text-xs flex items-center gap-2 p-2 rounded-xl hover:bg-indigo-50 dark:hover:bg-slate-800/80 text-slate-700 dark:text-slate-200 font-medium transition-colors"
+                      className="w-full text-left cursor-pointer text-xs flex items-center gap-2 p-2 rounded-xl hover:bg-indigo-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 font-medium transition-colors"
                     >
                       <Settings className="w-3.5 h-3.5 text-indigo-500" />
                       <span>Settings</span>
@@ -373,7 +373,7 @@ export const DashboardLayout = () => {
                         setUserMenuOpen(false);
                         logout();
                       }}
-                      className="w-full text-left cursor-pointer text-xs flex items-center gap-2 p-2 rounded-xl text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 font-medium transition-colors"
+                      className="w-full text-left cursor-pointer text-xs flex items-center gap-2 p-2 rounded-xl text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/60 font-semibold transition-colors"
                     >
                       <LogOut className="w-3.5 h-3.5" />
                       <span>Logout</span>
