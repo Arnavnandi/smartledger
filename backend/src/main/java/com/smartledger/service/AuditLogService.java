@@ -3,6 +3,8 @@ package com.smartledger.service;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.smartledger.model.AuditLog;
 import com.smartledger.repository.AuditLogRepository;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -21,6 +23,11 @@ public class AuditLogService {
     public void logAction(String userEmail, String action, String resourceType, String resourceId, String details) {
         AuditLog log = new AuditLog(userEmail, action, resourceType, resourceId, details);
         auditLogRepository.save(log);
+    }
+
+    @Transactional(readOnly = true)
+    public Page<AuditLog> getUserActivityLogs(String userEmail, Pageable pageable) {
+        return auditLogRepository.findByUserEmailOrderByTimestampDesc(userEmail, pageable);
     }
 
     @Transactional
@@ -58,3 +65,4 @@ public class AuditLogService {
         auditLogRepository.save(log);
     }
 }
+

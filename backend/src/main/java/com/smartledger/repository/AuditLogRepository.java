@@ -9,4 +9,5 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface AuditLogRepository extends JpaRepository<AuditLog, Long> {
     Page<AuditLog> findAllByOrderByTimestampDesc(Pageable pageable);
+    Page<AuditLog> findByUserEmailOrderByTimestampDesc(String userEmail, Pageable pageable);
 }

@@ -3,21 +3,22 @@ package com.smartledger.controller;
 import com.smartledger.model.AuditLog;
 import com.smartledger.model.dto.PaginatedResponse;
 import com.smartledger.service.AuditLogService;
-import com.smartledger.service.SystemAdminService;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/activity")
 public class ActivityController {
 
-    private final SystemAdminService systemAdminService;
+    private final AuditLogService auditLogService;
 
-    public ActivityController(SystemAdminService systemAdminService) {
-        this.systemAdminService = systemAdminService;
+    public ActivityController(AuditLogService auditLogService) {
+        this.auditLogService = auditLogService;
     }
 
     @GetMapping
@@ -25,8 +26,11 @@ public class ActivityController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size
     ) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String userEmail = authentication.getName();
+
         Pageable pageable = PageRequest.of(page, size);
-        Page<AuditLog> logPage = systemAdminService.getSystemLogs(pageable);
+        Page<AuditLog> logPage = auditLogService.getUserActivityLogs(userEmail, pageable);
         return ResponseEntity.ok(new PaginatedResponse<>(
                 logPage.getContent(),
                 logPage.getNumber(),
