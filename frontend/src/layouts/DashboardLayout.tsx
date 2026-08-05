@@ -103,88 +103,6 @@ export const DashboardLayout = () => {
     { name: 'Settings', path: '/settings', icon: Settings },
   ];
 
-  const NotificationBell = () => (
-    <DropdownMenu>
-      <DropdownMenuTrigger className="relative flex h-9 w-9 items-center justify-center rounded-xl bg-white/80 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/60 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700/80 hover:text-slate-900 dark:hover:text-white transition-all outline-none shadow-sm focus:ring-2 focus:ring-indigo-500/40">
-        <Bell className="w-4 h-4" />
-        {unreadCount > 0 && (
-          <span className="absolute top-2 right-2 w-2 h-2 bg-rose-500 rounded-full animate-pulse shadow-glow-rose"></span>
-        )}
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-80 max-h-96 overflow-y-auto bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100 shadow-2xl rounded-xl p-0">
-        <div className="flex justify-between items-center p-3 border-b border-slate-200 dark:border-slate-700/80 bg-slate-50 dark:bg-slate-800/90 backdrop-blur">
-          <h3 className="font-semibold text-xs tracking-wider uppercase text-slate-600 dark:text-slate-300">Notifications</h3>
-          {unreadCount > 0 && (
-            <Button variant="ghost" size="sm" onClick={handleMarkAllAsRead} className="h-auto p-1 text-xs text-indigo-600 dark:text-indigo-400 hover:text-indigo-500 hover:bg-transparent">
-              <Check className="w-3 h-3 mr-1" /> Mark all read
-            </Button>
-          )}
-        </div>
-        <DropdownMenuSeparator className="bg-slate-200 dark:bg-slate-700/50" />
-        {notifications.length === 0 ? (
-          <div className="p-6 text-center text-xs text-slate-500 dark:text-slate-400">
-            No notifications
-          </div>
-        ) : (
-          notifications.map(notif => (
-            <DropdownMenuItem
-              key={notif.id}
-              className={`flex flex-col items-start p-3.5 border-b border-slate-100 dark:border-slate-700/40 cursor-pointer transition-colors ${!notif.isRead ? 'bg-indigo-50/50 dark:bg-slate-700/30' : 'hover:bg-slate-50 dark:hover:bg-slate-700/20'}`}
-              onClick={() => !notif.isRead && handleMarkAsRead(notif.id)}
-            >
-              <div className="flex w-full justify-between items-center mb-1">
-                <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
-                  notif.type === 'SUCCESS' ? 'bg-emerald-500/20 text-emerald-600 dark:text-emerald-400' :
-                  notif.type === 'WARNING' ? 'bg-amber-500/20 text-amber-600 dark:text-amber-400' :
-                  notif.type === 'ERROR' ? 'bg-rose-500/20 text-rose-600 dark:text-rose-400' : 'bg-indigo-500/20 text-indigo-600 dark:text-indigo-400'
-                }`}>
-                  {notif.type}
-                </span>
-                <span className="text-[10px] text-slate-500 dark:text-slate-400">
-                  {new Date(notif.createdAt).toLocaleDateString()}
-                </span>
-              </div>
-              <p className="text-xs text-slate-700 dark:text-slate-300 whitespace-pre-wrap leading-relaxed">{notif.message}</p>
-            </DropdownMenuItem>
-          ))
-        )}
-      </DropdownMenuContent>
-    </DropdownMenu>
-  );
-
-  const UserAvatarDropdown = () => (
-    <DropdownMenu>
-      <DropdownMenuTrigger className="flex items-center gap-2 outline-none cursor-pointer">
-        <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-indigo-600 to-violet-600 border border-indigo-400/40 flex items-center justify-center text-xs font-bold text-white shadow-sm hover:opacity-95 transition-all">
-          {userInitials}
-        </div>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-56 bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100 shadow-xl rounded-xl p-1">
-        <DropdownMenuLabel className="px-3 py-2">
-          <p className="text-xs font-bold text-slate-900 dark:text-white truncate">{user?.username}</p>
-          <p className="text-[10px] text-slate-500 dark:text-slate-400 truncate mt-0.5">{company?.name || 'SmartLedger User'}</p>
-        </DropdownMenuLabel>
-        <DropdownMenuSeparator className="bg-slate-200 dark:bg-slate-700" />
-        <DropdownMenuItem 
-          onClick={() => toast.info('User profile management coming soon!')}
-          className="cursor-pointer text-xs flex items-center justify-between p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700/60"
-        >
-          <div className="flex items-center gap-2">
-            <UserIcon className="w-3.5 h-3.5 text-indigo-500" /> My Profile
-          </div>
-          <span className="text-[9px] font-semibold bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 px-1.5 py-0.5 rounded border border-indigo-200 dark:border-indigo-800/60">Coming Soon</span>
-        </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => navigate('/settings')} className="cursor-pointer text-xs flex items-center gap-2 p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700/60">
-          <Settings className="w-3.5 h-3.5 text-indigo-500" /> Settings
-        </DropdownMenuItem>
-        <DropdownMenuSeparator className="bg-slate-200 dark:bg-slate-700" />
-        <DropdownMenuItem onClick={logout} className="cursor-pointer text-xs flex items-center gap-2 p-2 rounded-lg text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40">
-          <LogOut className="w-3.5 h-3.5" /> Logout
-        </DropdownMenuItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
-  );
-
   const userInitials = user?.username ? user.username.substring(0, 2).toUpperCase() : 'SL';
 
   return (
@@ -327,8 +245,90 @@ export const DashboardLayout = () => {
             </Link>
 
             <ThemeToggle />
-            <NotificationBell />
-            <UserAvatarDropdown />
+
+            {/* Notification Bell Dropdown */}
+            <DropdownMenu>
+              <DropdownMenuTrigger className="relative flex h-9 w-9 items-center justify-center rounded-xl bg-white/80 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/60 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700/80 hover:text-slate-900 dark:hover:text-white transition-all outline-none shadow-sm focus:ring-2 focus:ring-indigo-500/40">
+                <Bell className="w-4 h-4" />
+                {unreadCount > 0 && (
+                  <span className="absolute top-2 right-2 w-2 h-2 bg-rose-500 rounded-full animate-pulse shadow-glow-rose"></span>
+                )}
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-80 max-h-96 overflow-y-auto bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100 shadow-2xl rounded-xl p-0">
+                <div className="flex justify-between items-center p-3 border-b border-slate-200 dark:border-slate-700/80 bg-slate-50 dark:bg-slate-800/90 backdrop-blur">
+                  <h3 className="font-semibold text-xs tracking-wider uppercase text-slate-600 dark:text-slate-300">Notifications</h3>
+                  {unreadCount > 0 && (
+                    <Button variant="ghost" size="sm" onClick={handleMarkAllAsRead} className="h-auto p-1 text-xs text-indigo-600 dark:text-indigo-400 hover:text-indigo-500 hover:bg-transparent">
+                      <Check className="w-3 h-3 mr-1" /> Mark all read
+                    </Button>
+                  )}
+                </div>
+                <DropdownMenuSeparator className="bg-slate-200 dark:bg-slate-700/50" />
+                {notifications.length === 0 ? (
+                  <div className="p-6 text-center text-xs text-slate-500 dark:text-slate-400">
+                    No notifications
+                  </div>
+                ) : (
+                  notifications.map(notif => (
+                    <DropdownMenuItem
+                      key={notif.id}
+                      className={`flex flex-col items-start p-3.5 border-b border-slate-100 dark:border-slate-700/40 cursor-pointer transition-colors ${!notif.isRead ? 'bg-indigo-50/50 dark:bg-slate-700/30' : 'hover:bg-slate-50 dark:hover:bg-slate-700/20'}`}
+                      onClick={() => !notif.isRead && handleMarkAsRead(notif.id)}
+                    >
+                      <div className="flex w-full justify-between items-center mb-1">
+                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                          notif.type === 'SUCCESS' ? 'bg-emerald-500/20 text-emerald-600 dark:text-emerald-400' :
+                          notif.type === 'WARNING' ? 'bg-amber-500/20 text-amber-600 dark:text-amber-400' :
+                          notif.type === 'ERROR' ? 'bg-rose-500/20 text-rose-600 dark:text-rose-400' : 'bg-indigo-500/20 text-indigo-600 dark:text-indigo-400'
+                        }`}>
+                          {notif.type}
+                        </span>
+                        <span className="text-[10px] text-slate-500 dark:text-slate-400">
+                          {new Date(notif.createdAt).toLocaleDateString()}
+                        </span>
+                      </div>
+                      <p className="text-xs text-slate-700 dark:text-slate-300 whitespace-pre-wrap leading-relaxed">{notif.message}</p>
+                    </DropdownMenuItem>
+                  ))
+                )}
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+            {/* Top Right User Avatar Dropdown */}
+            <DropdownMenu>
+              <DropdownMenuTrigger className="flex items-center gap-2 outline-none cursor-pointer group">
+                <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-indigo-600 to-violet-600 border border-indigo-400/40 flex items-center justify-center text-xs font-bold text-white shadow-sm group-hover:opacity-95 transition-all">
+                  {userInitials}
+                </div>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56 bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100 shadow-xl rounded-xl p-1">
+                <DropdownMenuLabel className="px-3 py-2">
+                  <p className="text-xs font-bold text-slate-900 dark:text-white truncate">{user?.username}</p>
+                  <p className="text-[10px] text-slate-500 dark:text-slate-400 truncate mt-0.5">{company?.name || 'SmartLedger User'}</p>
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator className="bg-slate-200 dark:bg-slate-700" />
+                <DropdownMenuItem 
+                  disabled
+                  onClick={(e) => {
+                    e.preventDefault();
+                    toast.info('User profile management coming soon!');
+                  }}
+                  className="cursor-not-allowed opacity-60 text-xs flex items-center justify-between p-2 rounded-lg"
+                >
+                  <div className="flex items-center gap-2">
+                    <UserIcon className="w-3.5 h-3.5 text-indigo-500" /> My Profile
+                  </div>
+                  <span className="text-[9px] font-semibold bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 px-1.5 py-0.5 rounded border border-slate-200 dark:border-slate-600">Coming Soon</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => navigate('/settings')} className="cursor-pointer text-xs flex items-center gap-2 p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700/60">
+                  <Settings className="w-3.5 h-3.5 text-indigo-500" /> Settings
+                </DropdownMenuItem>
+                <DropdownMenuSeparator className="bg-slate-200 dark:bg-slate-700" />
+                <DropdownMenuItem onClick={logout} className="cursor-pointer text-xs flex items-center gap-2 p-2 rounded-lg text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40">
+                  <LogOut className="w-3.5 h-3.5" /> Logout
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </header>
 
