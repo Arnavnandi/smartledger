@@ -196,7 +196,7 @@ public class InvoiceService {
 
         InvoiceStatus oldStatus = invoice.getStatus();
         if (oldStatus == newStatus) {
-            return new InvoiceResponse(invoice); // No change
+            return mapToResponse(invoice, company); // No change
         }
 
         invoice.setStatus(newStatus);
@@ -210,20 +210,10 @@ public class InvoiceService {
                 "Client " + invoice.getClient().getName() + " paid Invoice #" + invoice.getInvoiceNumber() + " (" + currency + String.format("%.2f", invoice.getTotalAmount()) + ")",
                 com.smartledger.model.NotificationType.SUCCESS
             );
-        }
-
-        // Update Client Outstanding Balance
-        Client client = invoice.getClient();
-        if ((oldStatus == InvoiceStatus.DRAFT || oldStatus == InvoiceStatus.CANCELLED) && 
-            (newStatus == InvoiceStatus.PENDING || newStatus == InvoiceStatus.OVERDUE)) {
-            // Balance increases
-            client.setOutstandingBalance(client.getOutstandingBalance() + invoice.getTotalAmount());
-            clientRepository.save(client);
-        } else if ((oldStatus == InvoiceStatus.PENDING || oldStatus == InvoiceStatus.OVERDUE) && 
-                   (newStatus == InvoiceStatus.PAID || newStatus == InvoiceStatus.CANCELLED)) {
-            // Balance decreases
-            client.setOutstandingBalance(client.getOutstandingBalance() - invoice.getTotalAmount());
-            clientRepository.save(client);
+            auditLogService.logAction(email, "INVOICE_MARKED_PAID", "Invoice", invoice.getId().toString(), "Invoice #" + invoice.getInvoiceNumber() + " marked as PAID");
+            auditLogService.logAction(email, "PAYMENT_RECEIVED", "Invoice", invoice.getId().toString(), "Payment received for Invoice #" + invoice.getInvoiceNumber() + " (" + currency + String.format("%.2f", invoice.getTotalAmount()) + ")");
+        } else if (oldStatus == InvoiceStatus.PAID && newStatus != InvoiceStatus.PAID) {
+            auditLogService.logAction(email, "INVOICE_UNPAID", "Invoice", invoice.getId().toString(), "Invoice #" + invoice.getInvoiceNumber() + " status changed from PAID back to " + newStatus);
         }
 
         String note = request.getNote() != null && !request.getNote().isEmpty() ? " - " + request.getNote() : "";
@@ -238,11 +228,8 @@ public class InvoiceService {
         Company company = authContextService.getAuthenticatedUserCompany(email);
         Invoice invoice = invoiceRepository.findByIdAndCompany(id, company)
                 .orElseThrow(() -> new RuntimeException("Invoice not found"));
-                
-        if (invoice.getStatus() != InvoiceStatus.DRAFT) {
-            throw new RuntimeException("Only DRAFT invoices can be deleted");
-        }
 
+        auditLogService.logAction(email, "INVOICE_DELETED", "Invoice", invoice.getId().toString(), "Deleted invoice " + invoice.getInvoiceNumber() + " (status: " + invoice.getStatus() + ")");
         invoiceActivityRepository.deleteAll(invoiceActivityRepository.findByInvoiceOrderByTimestampDesc(invoice));
         invoiceRepository.delete(invoice);
     }
@@ -266,11 +253,6 @@ public class InvoiceService {
         if (invoice.getStatus() == InvoiceStatus.DRAFT) {
             invoice.setStatus(InvoiceStatus.PENDING);
             invoice = invoiceRepository.save(invoice);
-            
-            // Update Client Balance
-            Client client = invoice.getClient();
-            client.setOutstandingBalance(client.getOutstandingBalance() + invoice.getTotalAmount());
-            clientRepository.save(client);
         }
 
         logActivity(invoice, "EMAIL_SENT", "Invoice emailed to " + invoice.getClient().getEmail());

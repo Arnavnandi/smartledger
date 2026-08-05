@@ -16,7 +16,7 @@ public class ClientRequest {
     private String address;
     private String notes;
     private List<String> tags;
-    private Double outstandingBalance;
+    private Double openingBalance;
 
     // Getters and Setters
     public String getName() { return name; }
@@ -37,6 +37,11 @@ public class ClientRequest {
     public List<String> getTags() { return tags; }
     public void setTags(List<String> tags) { this.tags = tags; }
 
-    public Double getOutstandingBalance() { return outstandingBalance; }
-    public void setOutstandingBalance(Double outstandingBalance) { this.outstandingBalance = outstandingBalance; }
+    public Double getOpeningBalance() { return openingBalance; }
+    public void setOpeningBalance(Double openingBalance) { this.openingBalance = openingBalance; }
+
+    // Alias for backward compatibility
+    public Double getOutstandingBalance() { return openingBalance; }
+    public void setOutstandingBalance(Double outstandingBalance) { this.openingBalance = outstandingBalance; }
 }
+

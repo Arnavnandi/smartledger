@@ -31,7 +31,7 @@ export const ClientFormPage = () => {
           phone: client.phone || '',
           address: client.address || '',
           notes: client.notes || '',
-          outstandingBalance: client.outstandingBalance
+          openingBalance: client.openingBalance ?? client.outstandingBalance
         });
         setTags(client.tags || []);
       }).catch(() => {
@@ -58,6 +58,9 @@ export const ClientFormPage = () => {
   const onSubmit = async (data: ClientRequest) => {
     try {
       data.tags = tags;
+      if (data.openingBalance !== undefined) {
+        data.outstandingBalance = data.openingBalance;
+      }
       if (isEditing) {
         await clientService.updateClient(Number(id), data);
       } else {
@@ -111,8 +114,9 @@ export const ClientFormPage = () => {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="outstandingBalance">Outstanding Balance</Label>
-                <Input id="outstandingBalance" type="number" step="0.01" {...register('outstandingBalance', { valueAsNumber: true })} />
+                <Label htmlFor="openingBalance">Opening Balance</Label>
+                <Input id="openingBalance" type="number" step="0.01" placeholder="0.00" {...register('openingBalance', { valueAsNumber: true })} />
+                <p className="text-xs text-muted-foreground">Amount already owed by this client before using SmartLedger.</p>
               </div>
             </div>
 

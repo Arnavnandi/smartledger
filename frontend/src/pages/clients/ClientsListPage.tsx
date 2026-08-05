@@ -91,7 +91,7 @@ export const ClientsListPage = () => {
             <TableRow className="border-b border-slate-200 dark:border-slate-800">
               <TableHead className="font-semibold text-xs text-slate-600 dark:text-slate-300">Name</TableHead>
               <TableHead className="font-semibold text-xs text-slate-600 dark:text-slate-300">Email</TableHead>
-              <TableHead className="font-semibold text-xs text-slate-600 dark:text-slate-300">Outstanding Balance</TableHead>
+              <TableHead className="font-semibold text-xs text-slate-600 dark:text-slate-300">Outstanding Due</TableHead>
               <TableHead className="font-semibold text-xs text-slate-600 dark:text-slate-300">Tags</TableHead>
               <TableHead className="font-semibold text-xs text-slate-600 dark:text-slate-300 text-right">Actions</TableHead>
             </TableRow>
@@ -120,17 +120,25 @@ export const ClientsListPage = () => {
                 </TableCell>
               </TableRow>
             ) : (
-              data?.content.map((client) => (
-                <TableRow key={client.id} className="odd:bg-white even:bg-slate-50/50 dark:odd:bg-slate-900/40 dark:even:bg-slate-900/80 hover:bg-indigo-50/40 dark:hover:bg-indigo-950/20 transition-colors border-b border-slate-100 dark:border-slate-800/50">
-                  <TableCell className="font-medium text-xs">
-                    <Link to={`/clients/${client.id}`} className="hover:underline text-indigo-600 dark:text-indigo-400 font-bold">
-                      {client.name}
-                    </Link>
-                  </TableCell>
-                  <TableCell className="text-xs text-slate-600 dark:text-slate-400">{client.email}</TableCell>
-                  <TableCell className={`font-bold text-xs ${client.outstandingBalance > 0 ? 'text-amber-600 dark:text-amber-400' : 'text-slate-700 dark:text-slate-300'}`}>
-                    {formatCurrency(client.outstandingBalance)}
-                  </TableCell>
+              data?.content.map((client) => {
+                const due = client.outstandingDue ?? client.outstandingBalance;
+                return (
+                  <TableRow key={client.id} className="odd:bg-white even:bg-slate-50/50 dark:odd:bg-slate-900/40 dark:even:bg-slate-900/80 hover:bg-indigo-50/40 dark:hover:bg-indigo-950/20 transition-colors border-b border-slate-100 dark:border-slate-800/50">
+                    <TableCell className="font-medium text-xs">
+                      <Link to={`/clients/${client.id}`} className="hover:underline text-indigo-600 dark:text-indigo-400 font-bold">
+                        {client.name}
+                      </Link>
+                    </TableCell>
+                    <TableCell className="text-xs text-slate-600 dark:text-slate-400">{client.email}</TableCell>
+                    <TableCell className="text-xs">
+                      {due > 0 ? (
+                        <span className="font-bold text-amber-600 dark:text-amber-400">{formatCurrency(due)}</span>
+                      ) : due === 0 ? (
+                        <Badge variant="outline" className="text-[10px] bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/30 font-semibold">Settled</Badge>
+                      ) : (
+                        <span className="font-bold text-emerald-600 dark:text-emerald-400">Client Credit: {formatCurrency(Math.abs(due))}</span>
+                      )}
+                    </TableCell>
                   <TableCell>
                     <div className="flex gap-1 flex-wrap">
                       {client.tags?.slice(0, 2).map(tag => (

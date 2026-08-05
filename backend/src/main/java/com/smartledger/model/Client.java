@@ -40,8 +40,10 @@ public class Client {
     @Column(name = "tag")
     private List<String> tags = new ArrayList<>();
 
-    @Column
-    private Double outstandingBalance = 0.0;
+    // Stores the client's balance before any SmartLedger invoices.
+    // DB column remains "outstanding_balance" to avoid migration.
+    @Column(name = "outstanding_balance")
+    private Double openingBalance = 0.0;
 
     @CreationTimestamp
     @Column(updatable = false)
@@ -77,8 +79,8 @@ public class Client {
     public List<String> getTags() { return tags; }
     public void setTags(List<String> tags) { this.tags = tags; }
 
-    public Double getOutstandingBalance() { return outstandingBalance; }
-    public void setOutstandingBalance(Double outstandingBalance) { this.outstandingBalance = outstandingBalance; }
+    public Double getOpeningBalance() { return openingBalance != null ? openingBalance : 0.0; }
+    public void setOpeningBalance(Double openingBalance) { this.openingBalance = openingBalance; }
 
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
@@ -86,3 +88,4 @@ public class Client {
     public LocalDateTime getUpdatedAt() { return updatedAt; }
     public void setUpdatedAt(LocalDateTime updatedAt) { this.updatedAt = updatedAt; }
 }
+

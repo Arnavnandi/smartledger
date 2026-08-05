@@ -13,7 +13,8 @@ public class ClientResponse {
     private String address;
     private String notes;
     private List<String> tags;
-    private Double outstandingBalance;
+    private Double openingBalance;
+    private Double outstandingDue;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
@@ -25,7 +26,8 @@ public class ClientResponse {
         this.address = client.getAddress();
         this.notes = client.getNotes();
         this.tags = client.getTags();
-        this.outstandingBalance = client.getOutstandingBalance();
+        this.openingBalance = client.getOpeningBalance();
+        this.outstandingDue = client.getOpeningBalance(); // Default; overridden by ClientBalanceService
         this.createdAt = client.getCreatedAt();
         this.updatedAt = client.getUpdatedAt();
     }
@@ -38,8 +40,17 @@ public class ClientResponse {
     public String getAddress() { return address; }
     public String getNotes() { return notes; }
     public List<String> getTags() { return tags; }
-    public Double getOutstandingBalance() { return outstandingBalance; }
-    public void setOutstandingBalance(Double outstandingBalance) { this.outstandingBalance = outstandingBalance; }
+
+    public Double getOpeningBalance() { return openingBalance; }
+    public void setOpeningBalance(Double openingBalance) { this.openingBalance = openingBalance; }
+
+    public Double getOutstandingDue() { return outstandingDue; }
+    public void setOutstandingDue(Double outstandingDue) { this.outstandingDue = outstandingDue; }
+
+    // Backward compatibility: frontend still reads outstandingBalance
+    public Double getOutstandingBalance() { return outstandingDue; }
+
     public LocalDateTime getCreatedAt() { return createdAt; }
     public LocalDateTime getUpdatedAt() { return updatedAt; }
 }
+

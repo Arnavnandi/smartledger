@@ -62,16 +62,29 @@ export const ClientDetailsPage = () => {
               <CardTitle>Client Details</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-3 gap-4">
                 <div>
                   <h4 className="text-sm font-medium text-muted-foreground">Address</h4>
-                  <p className="mt-1 whitespace-pre-wrap">{client.address || 'N/A'}</p>
+                  <p className="mt-1 whitespace-pre-wrap text-sm">{client.address || 'N/A'}</p>
                 </div>
                 <div>
-                  <h4 className="text-sm font-medium text-muted-foreground">Outstanding Balance</h4>
-                  <p className={`mt-1 text-xl font-bold ${client.outstandingBalance > 0 ? 'text-destructive' : 'text-green-600'}`}>
-                    {formatCurrency(client.outstandingBalance)}
+                  <h4 className="text-sm font-medium text-muted-foreground">Opening Balance</h4>
+                  <p className="mt-1 text-lg font-semibold text-slate-700 dark:text-slate-300">
+                    {formatCurrency(client.openingBalance ?? 0)}
                   </p>
+                </div>
+                <div>
+                  <h4 className="text-sm font-medium text-muted-foreground">Outstanding Due</h4>
+                  {(() => {
+                    const due = client.outstandingDue ?? client.outstandingBalance;
+                    if (due > 0) {
+                      return <p className="mt-1 text-xl font-bold text-amber-600 dark:text-amber-400">{formatCurrency(due)}</p>;
+                    } else if (due === 0) {
+                      return <div className="mt-1"><Badge variant="outline" className="text-xs bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/30 font-semibold px-2.5 py-0.5">Settled</Badge></div>;
+                    } else {
+                      return <p className="mt-1 text-lg font-bold text-emerald-600 dark:text-emerald-400">Client Credit: {formatCurrency(Math.abs(due))}</p>;
+                    }
+                  })()}
                 </div>
               </div>
               

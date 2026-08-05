@@ -13,7 +13,9 @@ export interface Client {
   address?: string;
   notes?: string;
   tags: string[];
-  outstandingBalance: number;
+  openingBalance: number;
+  outstandingDue: number;
+  outstandingBalance: number; // legacy alias
   createdAt: string;
   updatedAt: string;
 }
@@ -32,5 +34,7 @@ export interface ClientRequest {
   address?: string;
   notes?: string;
   tags?: string[];
+  openingBalance?: number;
   outstandingBalance?: number;
 }
+

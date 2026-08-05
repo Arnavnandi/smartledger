@@ -1,5 +1,6 @@
 package com.smartledger.repository;
 
+import com.smartledger.model.Client;
 import com.smartledger.model.Company;
 import com.smartledger.model.Invoice;
 import com.smartledger.model.InvoiceStatus;
@@ -47,4 +48,9 @@ public interface InvoiceRepository extends JpaRepository<Invoice, Long>, JpaSpec
     Page<Invoice> findByCompanyAndStatus(Company company, InvoiceStatus status, Pageable pageable);
 
     Optional<Invoice> findByIdAndCompany(Long id, Company company);
+
+    // Client Balance: Sum of all unpaid invoice totals for a specific client
+    @Query("SELECT COALESCE(SUM(i.totalAmount), 0.0) FROM Invoice i WHERE i.client = :client AND i.status NOT IN ('PAID', 'CANCELLED')")
+    Double sumUnpaidInvoicesByClient(@Param("client") Client client);
 }
+
