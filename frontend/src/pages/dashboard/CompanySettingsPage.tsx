@@ -14,7 +14,7 @@ import type { FormEvent } from 'react';
 import { ExpenseCategorySettings } from './ExpenseCategorySettings';
 import { useCompany } from '../../context/CompanyContext';
 import { useTheme } from '../../context/ThemeContext';
-import { Sun, Moon, Laptop, Building2, Tag, Palette, ShieldCheck, Upload, Save } from 'lucide-react';
+import { Sun, Moon, Laptop, Building2, Tag, Palette, Upload, Save } from 'lucide-react';
 
 export const CompanySettingsPage = () => {
   const { refreshCompany } = useCompany();
@@ -108,9 +108,6 @@ export const CompanySettingsPage = () => {
           </TabsTrigger>
           <TabsTrigger value="appearance" className="text-xs rounded-lg flex items-center gap-1.5 px-3.5 py-2">
             <Palette className="w-3.5 h-3.5" /> Appearance
-          </TabsTrigger>
-          <TabsTrigger value="security" className="text-xs rounded-lg flex items-center gap-1.5 px-3.5 py-2">
-            <ShieldCheck className="w-3.5 h-3.5" /> Security & Access
           </TabsTrigger>
         </TabsList>
 
@@ -250,28 +247,8 @@ export const CompanySettingsPage = () => {
             </CardContent>
           </Card>
         </TabsContent>
-
-        {/* Security Tab */}
-        <TabsContent value="security">
-          <Card className="bg-white dark:bg-slate-900/70 border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm">
-            <CardHeader>
-              <CardTitle className="text-lg font-bold text-slate-900 dark:text-white">Security & Password</CardTitle>
-              <CardDescription className="text-xs text-slate-500 dark:text-slate-400">Manage account access and authentication parameters.</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700/60 flex items-center justify-between">
-                <div>
-                  <p className="text-xs font-bold text-slate-800 dark:text-slate-200">Two-Factor Authentication (2FA)</p>
-                  <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5">Secure your workspace logins with authenticator apps.</p>
-                </div>
-                <Button size="sm" variant="outline" className="h-8 text-xs rounded-lg" onClick={() => toast.info('2FA settings feature enabled.')}>
-                  Enable 2FA
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
       </Tabs>
     </motion.div>
   );
 };
+
