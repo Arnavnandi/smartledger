@@ -1,9 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useCompany } from '../context/CompanyContext';
 import { Button } from '@/components/ui/button';
-import { toast } from 'sonner';
 import { 
   LayoutDashboard, 
   FileText, 
@@ -35,8 +34,7 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-  DropdownMenuSeparator,
-  DropdownMenuLabel
+  DropdownMenuSeparator
 } from '@/components/ui/dropdown-menu';
 
 export const DashboardLayout = () => {
@@ -51,6 +49,30 @@ export const DashboardLayout = () => {
   const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
   const [notifications, setNotifications] = useState<AppNotification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
+
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const userMenuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (userMenuRef.current && !userMenuRef.current.contains(e.target as Node)) {
+        setUserMenuOpen(false);
+      }
+    };
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setUserMenuOpen(false);
+      }
+    };
+    if (userMenuOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+      document.addEventListener('keydown', handleKeyDown);
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [userMenuOpen]);
 
   useEffect(() => {
     localStorage.setItem('sidebar_collapsed', sidebarCollapsed.toString());
@@ -294,41 +316,72 @@ export const DashboardLayout = () => {
               </DropdownMenuContent>
             </DropdownMenu>
 
-            {/* Top Right User Avatar Dropdown */}
-            <DropdownMenu>
-              <DropdownMenuTrigger className="flex items-center gap-2 outline-none cursor-pointer group">
+            {/* Top Right User Avatar Button & Dropdown Menu */}
+            <div className="relative" ref={userMenuRef}>
+              <button
+                type="button"
+                onClick={() => setUserMenuOpen((prev) => !prev)}
+                className="flex items-center gap-2 outline-none cursor-pointer group focus:ring-2 focus:ring-indigo-500/40 rounded-xl"
+                aria-label="User Account Menu"
+                aria-expanded={userMenuOpen}
+              >
                 <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-indigo-600 to-violet-600 border border-indigo-400/40 flex items-center justify-center text-xs font-bold text-white shadow-sm group-hover:opacity-95 transition-all">
                   {userInitials}
                 </div>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-56 bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100 shadow-xl rounded-xl p-1">
-                <DropdownMenuLabel className="px-3 py-2">
-                  <p className="text-xs font-bold text-slate-900 dark:text-white truncate">{user?.username}</p>
-                  <p className="text-[10px] text-slate-500 dark:text-slate-400 truncate mt-0.5">{company?.name || 'SmartLedger User'}</p>
-                </DropdownMenuLabel>
-                <DropdownMenuSeparator className="bg-slate-200 dark:bg-slate-700" />
-                <DropdownMenuItem 
-                  disabled
-                  onClick={(e) => {
-                    e.preventDefault();
-                    toast.info('User profile management coming soon!');
-                  }}
-                  className="cursor-not-allowed opacity-60 text-xs flex items-center justify-between p-2 rounded-lg"
-                >
-                  <div className="flex items-center gap-2">
-                    <UserIcon className="w-3.5 h-3.5 text-indigo-500" /> My Profile
+              </button>
+
+              {userMenuOpen && (
+                <div className="absolute right-0 mt-2 w-56 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-800 dark:text-slate-100 shadow-2xl rounded-2xl p-1.5 z-50 animate-in fade-in-0 zoom-in-95 duration-150">
+                  <div className="px-3 py-2 border-b border-slate-100 dark:border-slate-800">
+                    <p className="text-xs font-bold text-slate-900 dark:text-white truncate">{user?.username}</p>
+                    <p className="text-[10px] text-slate-500 dark:text-slate-400 truncate mt-0.5">{company?.name || 'SmartLedger Workspace'}</p>
                   </div>
-                  <span className="text-[9px] font-semibold bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 px-1.5 py-0.5 rounded border border-slate-200 dark:border-slate-600">Coming Soon</span>
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => navigate('/settings')} className="cursor-pointer text-xs flex items-center gap-2 p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700/60">
-                  <Settings className="w-3.5 h-3.5 text-indigo-500" /> Settings
-                </DropdownMenuItem>
-                <DropdownMenuSeparator className="bg-slate-200 dark:bg-slate-700" />
-                <DropdownMenuItem onClick={logout} className="cursor-pointer text-xs flex items-center gap-2 p-2 rounded-lg text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40">
-                  <LogOut className="w-3.5 h-3.5" /> Logout
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+
+                  <div className="py-1 space-y-0.5">
+                    {/* My Profile (Disabled - Coming Soon) */}
+                    <button
+                      type="button"
+                      disabled
+                      className="w-full text-left cursor-not-allowed opacity-50 text-xs flex items-center justify-between p-2 rounded-xl text-slate-400 dark:text-slate-500"
+                    >
+                      <div className="flex items-center gap-2">
+                        <UserIcon className="w-3.5 h-3.5 text-indigo-400" />
+                        <span>My Profile</span>
+                      </div>
+                      <span className="text-[9px] font-semibold bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 px-1.5 py-0.5 rounded-md border border-slate-200 dark:border-slate-700">Coming Soon</span>
+                    </button>
+
+                    {/* Settings */}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setUserMenuOpen(false);
+                        navigate('/settings');
+                      }}
+                      className="w-full text-left cursor-pointer text-xs flex items-center gap-2 p-2 rounded-xl hover:bg-indigo-50 dark:hover:bg-slate-800/80 text-slate-700 dark:text-slate-200 font-medium transition-colors"
+                    >
+                      <Settings className="w-3.5 h-3.5 text-indigo-500" />
+                      <span>Settings</span>
+                    </button>
+                  </div>
+
+                  <div className="pt-1 border-t border-slate-100 dark:border-slate-800">
+                    {/* Logout */}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setUserMenuOpen(false);
+                        logout();
+                      }}
+                      className="w-full text-left cursor-pointer text-xs flex items-center gap-2 p-2 rounded-xl text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 font-medium transition-colors"
+                    >
+                      <LogOut className="w-3.5 h-3.5" />
+                      <span>Logout</span>
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         </header>
 
