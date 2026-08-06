@@ -86,12 +86,33 @@ public class EmailService {
         if (invoice == null || invoice.getClient() == null) return;
         String to = invoice.getClient().getEmail();
         String subject = "Invoice " + invoice.getInvoiceNumber() + " from " + invoice.getCompany().getName();
-        String currency = invoice.getCompany().getCurrency() != null ? invoice.getCompany().getCurrency() : "$";
-        String htmlText = "<h3>Hello " + invoice.getClient().getName() + ",</h3>" +
-                "<p>Please find attached your invoice <b>" + invoice.getInvoiceNumber() + "</b> for <b>" + currency + String.format("%.2f", invoice.getTotalAmount()) + "</b>.</p>" +
+        String currency = invoice.getCompany().getCurrency() != null ? invoice.getCompany().getCurrency() : "₹";
+        
+        String upiId = (invoice.getCompany().getUpiId() != null && !invoice.getCompany().getUpiId().trim().isEmpty()) 
+                ? invoice.getCompany().getUpiId().trim() 
+                : "8586808192@pthdfc";
+        String baseUrl = (frontendUrl != null && !frontendUrl.isBlank()) ? frontendUrl.replaceAll("/+$", "") : "https://smartledger-five.vercel.app";
+        
+        String paymentPageUrl = String.format("%s/pay?invoice=%s&amount=%.2f&company=%s&upi=%s&currency=%s",
+                baseUrl,
+                invoice.getInvoiceNumber(),
+                invoice.getTotalAmount(),
+                java.net.URLEncoder.encode(invoice.getCompany().getName() != null ? invoice.getCompany().getName() : "SmartLedger", java.nio.charset.StandardCharsets.UTF_8),
+                java.net.URLEncoder.encode(upiId, java.nio.charset.StandardCharsets.UTF_8),
+                java.net.URLEncoder.encode(currency, java.nio.charset.StandardCharsets.UTF_8));
+
+        String htmlText = "<div style='font-family: Arial, sans-serif; color: #1e293b; max-width: 600px; margin: 0 auto; padding: 24px; border: 1px solid #e2e8f0; border-radius: 12px;'>" +
+                "<h2 style='color: #4f46e5; margin-top: 0;'>Invoice " + invoice.getInvoiceNumber() + "</h2>" +
+                "<p>Hello <b>" + invoice.getClient().getName() + "</b>,</p>" +
+                "<p>Please find attached your invoice for <b>" + currency + String.format(java.util.Locale.US, "%.2f", invoice.getTotalAmount()) + "</b>.</p>" +
                 "<p>Due Date: <b>" + invoice.getDueDate() + "</b></p>" +
+                "<div style='margin: 24px 0; text-align: left;'>" +
+                "  <a href='" + paymentPageUrl + "' style='background-color: #10b981; color: #ffffff; padding: 12px 24px; text-decoration: none; border-radius: 8px; font-weight: bold; display: inline-block; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);'>Pay Online</a>" +
+                "</div>" +
+                "<p style='font-size: 12px; color: #64748b; margin-top: 16px;'>You can also scan the direct UPI QR code inside the attached PDF invoice using Google Pay, PhonePe, Paytm, or BHIM.</p>" +
                 "<br/><p>Thank you for your business!</p>" +
-                "<p>Best regards,<br/>" + invoice.getCompany().getName() + "</p>";
+                "<p>Best regards,<br/><b>" + invoice.getCompany().getName() + "</b></p>" +
+                "</div>";
 
         List<Map<String, Object>> attachments = null;
         if (pdfData != null && pdfData.length > 0) {

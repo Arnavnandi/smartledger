@@ -184,19 +184,21 @@ public class PdfService {
                 String companyName = invoice.getCompany().getName() != null ? invoice.getCompany().getName() : "SmartLedger";
                 double displayAmount = currencyService.convertToDisplay(invoice.getTotalAmount(), currency);
 
-                String baseUrl = (frontendUrl != null && !frontendUrl.isBlank()) ? frontendUrl.replaceAll("/+$", "") : "https://smartledger-five.vercel.app";
+                // Standards-Compliant Direct UPI Payment URI (scanned by GPay, PhonePe, Paytm, BHIM, Camera -> opens UPI App chooser)
+                String amountStr = String.format(java.util.Locale.US, "%.2f", displayAmount);
+                String encodedPn = java.net.URLEncoder.encode(companyName, java.nio.charset.StandardCharsets.UTF_8).replace("+", "%20");
+                String encodedTn = java.net.URLEncoder.encode("Invoice " + invoice.getInvoiceNumber(), java.nio.charset.StandardCharsets.UTF_8).replace("+", "%20");
+                String encodedTr = java.net.URLEncoder.encode(invoice.getInvoiceNumber(), java.nio.charset.StandardCharsets.UTF_8).replace("+", "%20");
 
-                // Public Web Payment Portal URL (scanned by phone camera -> redirects to payment page)
-                String paymentPageUrl = String.format("%s/pay?invoice=%s&amount=%.2f&company=%s&upi=%s&currency=%s",
-                        baseUrl,
-                        invoice.getInvoiceNumber(),
-                        displayAmount,
-                        java.net.URLEncoder.encode(companyName, java.nio.charset.StandardCharsets.UTF_8),
-                        java.net.URLEncoder.encode(upiId, java.nio.charset.StandardCharsets.UTF_8),
-                        java.net.URLEncoder.encode(currency, java.nio.charset.StandardCharsets.UTF_8));
+                String upiPaymentUrl = String.format("upi://pay?pa=%s&pn=%s&am=%s&cu=INR&tn=%s&tr=%s",
+                        upiId,
+                        encodedPn,
+                        amountStr,
+                        encodedTn,
+                        encodedTr);
 
                 QRCodeWriter qrCodeWriter = new QRCodeWriter();
-                BitMatrix bitMatrix = qrCodeWriter.encode(paymentPageUrl, BarcodeFormat.QR_CODE, 120, 120);
+                BitMatrix bitMatrix = qrCodeWriter.encode(upiPaymentUrl, BarcodeFormat.QR_CODE, 130, 130);
                 
                 ByteArrayOutputStream qrOut = new ByteArrayOutputStream();
                 MatrixToImageWriter.writeToStream(bitMatrix, "PNG", qrOut);
@@ -206,7 +208,7 @@ public class PdfService {
                 qrImage.setSpacingBefore(15);
                 document.add(qrImage);
 
-                Paragraph caption = new Paragraph("Scan QR Code to Open Payment Portal (" + upiId + ")", bodyFont);
+                Paragraph caption = new Paragraph("Scan with GPay / PhonePe / Paytm / BHIM to Pay (UPI: " + upiId + ")", bodyFont);
                 caption.setAlignment(Element.ALIGN_CENTER);
                 document.add(caption);
                 

@@ -13,8 +13,8 @@ export const PublicPaymentPage = () => {
   const companyName = searchParams.get('company') || 'SmartLedger Merchant';
   const upiId = searchParams.get('upi') || '8586808192@pthdfc';
   const currency = searchParams.get('currency') || '₹';
-
-  const upiUrl = `upi://pay?pa=${encodeURIComponent(upiId)}&pn=${encodeURIComponent(companyName)}&am=${encodeURIComponent(amount)}&cu=INR&tn=${encodeURIComponent('Invoice_' + invoiceNumber)}`;
+  const formattedAmount = (parseFloat(amount) || 0).toFixed(2);
+  const upiUrl = `upi://pay?pa=${encodeURIComponent(upiId)}&pn=${encodeURIComponent(companyName)}&am=${encodeURIComponent(formattedAmount)}&cu=INR&tn=${encodeURIComponent('Invoice ' + invoiceNumber)}&tr=${encodeURIComponent(invoiceNumber)}`;
 
   const handleCopyUpi = () => {
     navigator.clipboard.writeText(upiId);
