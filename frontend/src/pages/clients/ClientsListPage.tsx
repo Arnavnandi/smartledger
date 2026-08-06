@@ -156,6 +156,11 @@ export const ClientsListPage = () => {
                         <DropdownMenuItem onClick={() => navigate(`/clients/${client.id}`)}>
                           View Details
                         </DropdownMenuItem>
+                        {(client.openingBalance ?? 0) > 0 && (
+                          <DropdownMenuItem className="text-emerald-600 dark:text-emerald-400 font-medium" onClick={() => navigate(`/clients/${client.id}`)}>
+                            Generate Opening Invoice
+                          </DropdownMenuItem>
+                        )}
                         <DropdownMenuItem onClick={() => navigate(`/clients/${client.id}/edit`)}>
                           Edit Client
                         </DropdownMenuItem>

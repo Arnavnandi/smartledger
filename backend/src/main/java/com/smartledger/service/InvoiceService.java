@@ -47,7 +47,7 @@ public class InvoiceService {
         this.currencyService = currencyService;
     }
 
-    private InvoiceResponse mapToResponse(Invoice invoice, Company company) {
+    public InvoiceResponse mapToResponse(Invoice invoice, Company company) {
         InvoiceResponse response = new InvoiceResponse(invoice);
         String currency = company.getCurrency();
         response.setSubTotal(currencyService.convertToDisplay(invoice.getSubTotal(), currency));

@@ -47,5 +47,13 @@ export const clientService = {
   deleteClient: async (id: number): Promise<{ success: boolean; message: string }> => {
     const response = await api.delete(`/clients/${id}`);
     return response.data;
+  },
+
+  generateOpeningBalanceInvoice: async (
+    id: number,
+    data?: { dueDate?: string; notes?: string }
+  ): Promise<any> => {
+    const response = await api.post(`/clients/${id}/generate-opening-invoice`, data || {});
+    return response.data;
   }
 };

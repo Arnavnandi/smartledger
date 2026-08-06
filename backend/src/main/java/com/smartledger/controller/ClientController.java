@@ -84,4 +84,13 @@ public class ClientController {
         clientService.deleteClient(email, id);
         return ResponseEntity.ok(new ApiResponse(true, "Client deleted successfully"));
     }
+
+    @PostMapping("/{id}/generate-opening-invoice")
+    @org.springframework.security.access.prepost.PreAuthorize("hasAnyRole('OWNER', 'ACCOUNTANT', 'MANAGER', 'ADMIN', 'BUSINESS_OWNER')")
+    public ResponseEntity<com.smartledger.model.dto.InvoiceResponse> generateOpeningBalanceInvoice(
+            @PathVariable Long id,
+            @RequestBody(required = false) com.smartledger.model.dto.GenerateOpeningBalanceInvoiceRequest request) {
+        String email = getAuthenticatedUserEmail();
+        return ResponseEntity.ok(clientService.generateOpeningBalanceInvoice(email, id, request));
+    }
 }
