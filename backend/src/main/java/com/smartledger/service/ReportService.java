@@ -33,14 +33,12 @@ public class ReportService {
     private final ExpenseRepository expenseRepository;
     private final AuthContextService authContextService;
     private final CurrencyService currencyService;
-    private final com.fasterxml.jackson.databind.ObjectMapper objectMapper;
 
-    public ReportService(InvoiceRepository invoiceRepository, ExpenseRepository expenseRepository, AuthContextService authContextService, CurrencyService currencyService, com.fasterxml.jackson.databind.ObjectMapper objectMapper) {
+    public ReportService(InvoiceRepository invoiceRepository, ExpenseRepository expenseRepository, AuthContextService authContextService, CurrencyService currencyService) {
         this.invoiceRepository = invoiceRepository;
         this.expenseRepository = expenseRepository;
         this.authContextService = authContextService;
         this.currencyService = currencyService;
-        this.objectMapper = objectMapper;
     }
 
 
@@ -325,19 +323,6 @@ public class ReportService {
             return out.toByteArray();
         } catch (Exception e) {
             throw new RuntimeException("Failed to generate PDF", e);
-        }
-    }
-
-    @Transactional(readOnly = true)
-    public byte[] exportToJson(String email, int year, Integer month) {
-        Company company = authContextService.getAuthenticatedUserCompany(email);
-        ReportSummaryResponse summary = month != null ? 
-                generateMonthlyReport(email, year, month) : 
-                generateYearlyReport(email, year);
-        try {
-            return objectMapper.writerWithDefaultPrettyPrinter().writeValueAsBytes(summary);
-        } catch (Exception e) {
-            throw new RuntimeException("Failed to generate JSON report", e);
         }
     }
 }
