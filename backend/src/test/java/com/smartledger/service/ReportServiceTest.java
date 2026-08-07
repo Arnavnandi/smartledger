@@ -38,7 +38,7 @@ class ReportServiceTest {
         objectMapper.registerModule(new com.fasterxml.jackson.datatype.jsr310.JavaTimeModule());
 
         reportService = new ReportService(
-                invoiceRepository, expenseRepository, authContextService, currencyService, objectMapper
+                invoiceRepository, expenseRepository, authContextService, currencyService
         );
 
         Company company = new Company();
